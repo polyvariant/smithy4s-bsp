@@ -63,7 +63,7 @@ object SampleServer extends IOApp.Simple {
             InitializeBuildResult(
               displayName = "jk-sample-server",
               "1.0.0",
-              bspVersion = "2.2.0-",
+              bspVersion = "2.2.0-M2",
               capabilities = BuildServerCapabilities(
                 compileProvider = Some(
                   CompileProvider(languageIds = List(LanguageId("scala")))
