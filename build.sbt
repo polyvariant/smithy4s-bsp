@@ -20,8 +20,8 @@ lazy val codegen = project
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
     Compile / smithy4sModelTransformers := List(
-      "transform-build-target-data"
-      // "rename-scala-namespace",
+      "transform-build-target-data",
+      "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
   )

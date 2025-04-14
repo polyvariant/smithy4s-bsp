@@ -60,26 +60,45 @@ class TransformBuildTargetData extends ProjectionTransformer {
       )
     }
 
-    m.toBuilder()
-      .addShapes(
-        mapping
-          .map { case (k, vs) =>
-            val u = UnionShape
-              .builder()
-              .id(k)
+    val newUnions = mapping
+      .map { case (k, vs) =>
+        val u = UnionShape
+          .builder()
+          .id(ShapeId.fromParts(k.getNamespace(), k.getName() + "Typed"))
 
-            vs.foreach { v =>
-              u.addMember(
-                v.expectTrait(classOf[DataKindTrait]).getKind().replace("-", "_"),
-                v.getId(),
-              )
-            }
-            u.build()
-          }
-          .toList
-          .asJava
+        vs.foreach { v =>
+          u.addMember(
+            v.expectTrait(classOf[DataKindTrait]).getKind().replace("-", "_"),
+            v.getId(),
+          )
+        }
+        k -> u.build()
+      }
+
+    context
+      .getTransformer()
+      .mapShapes(
+        m.toBuilder()
+          .addShapes(
+            newUnions
+              .values
+              .toList
+              .asJava
+          )
+          .build(),
+        shape =>
+          if (shape.isMemberShape() && mapping.contains(shape.asMemberShape().get().getTarget())) {
+            val mem = shape
+              .asMemberShape()
+              .get()
+
+            mem
+              .toBuilder()
+              .target(newUnions(mem.getTarget()))
+              .build()
+          } else shape,
       )
-      .build()
+
   }
 
 }

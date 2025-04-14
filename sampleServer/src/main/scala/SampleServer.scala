@@ -43,11 +43,10 @@ import bsp.BuildServerOperation.BuildTargetCleanCache
 import bsp.CleanCacheResult
 import bsp.scala_.ScalacOptionsItem
 import bsp.DependencySourcesItem
-import bsp.BuildTargetData
-import smithy4s.Document
 import bsp.scala_.ScalaPlatform
 import bsp.scala_.ScalaBuildTarget
 import bsp.BuildServerOperation.OnBuildExit
+import bsp.BuildTargetDataTyped
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
@@ -103,16 +102,14 @@ object SampleServer extends IOApp.Simple {
                     URI(Paths.get("./").toAbsolutePath().toUri().toString())
                   ),
                   data = Some(
-                    BuildTargetData(
-                      Document.encode(
-                        ScalaBuildTarget(
-                          scalaOrganization = "org.scala-lang",
-                          scalaVersion = "3.7.0-RC1",
-                          scalaBinaryVersion = "3.7",
-                          platform = ScalaPlatform.JVM,
-                          jars = Nil,
-                          jvmBuildTarget = None,
-                        )
+                    BuildTargetDataTyped.scala(
+                      ScalaBuildTarget(
+                        scalaOrganization = "org.scala-lang",
+                        scalaVersion = "3.7.0-RC1",
+                        scalaBinaryVersion = "3.7",
+                        platform = ScalaPlatform.JVM,
+                        jars = Nil,
+                        jvmBuildTarget = None,
                       )
                     )
                   ),
