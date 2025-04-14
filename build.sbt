@@ -5,7 +5,8 @@ lazy val transformation = project
   .settings(
     scalaVersion := "2.12.20",
     libraryDependencies ++= Seq(
-      "software.amazon.smithy" % "smithy-build" % "1.56.0"
+      "software.amazon.smithy" % "smithy-build" % "1.56.0",
+      "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
     ),
     publish / skip := true,
   )
@@ -18,7 +19,10 @@ lazy val codegen = project
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
-    Compile / smithy4sModelTransformers := List("rename-scala-namespace"),
+    Compile / smithy4sModelTransformers := List(
+      "transform-build-target-data"
+      // "rename-scala-namespace",
+    ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
   )
   .enablePlugins(Smithy4sCodegenPlugin)
