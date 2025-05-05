@@ -26,13 +26,11 @@ import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.traits.RequiredTrait
 import alloy.DiscriminatedUnionTrait
 import software.amazon.smithy.model.traits.JsonNameTrait
+import software.amazon.smithy.model.traits.MixinTrait
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
 
-  // find all shapes with the trait DataKind
-  // create a union of them all
-  // replace the bsp.BuildTargetData document with that union
   def transform(context: TransformContext): Model = {
     val m = context.getModel()
 
@@ -99,11 +97,30 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
       val targetRefs = mapping(target.getId())
 
-      val unionTargets = targetRefs.map { targetRef =>
-        // targetRef can be anything. that's ok but we need to come up with a struct.
-        // the new struct shall have all the members of the original "parent" shape
-        // except that `baseDataMember`'s target needs to be changed to exactly targetRef.
+      val mixinForMembersBuilder = StructureShape
+        .builder()
+        .id(parent.getId() + "Common")
+        .addTrait(MixinTrait.builder.build())
 
+      def addNonDataMembers(toStruct: StructureShape.Builder): Unit = parent
+        .members()
+        .asScala
+        .filterNot(_.getId() == baseDataMember.getId())
+        .foreach { member =>
+          toStruct.addMember(
+            member.getMemberName(),
+            member.getTarget(),
+            _.traits(member.getIntroducedTraits().values()),
+          )
+        }
+
+      addNonDataMembers(mixinForMembersBuilder)
+
+      val mixinForMembers = mixinForMembersBuilder.build()
+
+      mb.addShape(mixinForMembers)
+
+      val unionTargets = targetRefs.map { targetRef =>
         val newStructBuilder = StructureShape
           .builder()
           .id(targetRef.getId())
@@ -118,14 +135,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
               .toList
               .asJava
           )
-
-        parent.members().asScala.filterNot(_.getId() == baseDataMember.getId()).foreach { member =>
-          newStructBuilder.addMember(
-            member.getMemberName(),
-            member.getTarget(),
-            _.traits(member.getIntroducedTraits().values()),
-          )
-        }
+          // the mixin adds all the common fields, so we don't need to do it ourselves
+          .mixins(List(mixinForMembers).asJava)
 
         val newDataStructBuilder = StructureShape
           .builder()
@@ -165,7 +176,6 @@ class TransformBuildTargetData extends ProjectionTransformer {
       val unionBuilder = UnionShape.builder().id(parent.getId())
 
       unionBuilder.addTrait(
-        // this will later be turned into a discriminated union trait
         new DiscriminatedUnionTrait("dataKind")
       )
 

@@ -10,7 +10,6 @@ import smithy4s.schema.Schema
 
 import util.chaining.*
 import smithy4sbsp.meta.RpcPayload
-import alloy.Discriminated
 import smithy4s.schema.Schema.StructSchema
 
 object BSPCodecs {
@@ -48,6 +47,8 @@ object BSPCodecs {
                 require(struu.fields.sizeIs == 1)
                 val field = struu.fields.head
                 field.schema.biject[b](f => struu.make(Vector(f)))(field.get)
+              case _ =>
+                sys.error("Unexpected non-struct schema used with RpcPayload: " + fa.shapeId)
             }
           case _ => fa
         }
