@@ -23,6 +23,7 @@ lazy val codegen = project
     Compile / smithy4sModelTransformers := List(
       "untagged-unions",
       "set-shapes",
+      "open-enums",
       "transform-build-target-data",
       "rename-scala-namespace",
     ),
