@@ -77,21 +77,13 @@ final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _]] private (
         using e.endpoint.output
       )
 
-      Endpoint(
-        e.endpoint
-          .hints
-          .get(JsonRequest)
-          .map(_.value)
-          .orElse(
-            e.endpoint
-              .hints
-              .get(JsonNotification)
-              .map(_.value)
-          )
-          .getOrElse(
-            sys.error(s"invalid endpoint ${e.endpoint.id}: no JsonRequest/JsonNotification present")
-          )
-      ).simple(e.impl)
+      e.endpoint.hints match {
+        case JsonRequest.hint(req) => Endpoint(req.value).simple(e.impl)
+        case JsonNotification.hint(noti) =>
+          Endpoint(noti.value).notification(e.impl.andThen(_.void))
+        case _ =>
+          sys.error(s"invalid endpoint ${e.endpoint.id}: no JsonRequest/JsonNotification present")
+      }
     }
 
     chan.withEndpointsStream(endpoints.map(handle(_)))
