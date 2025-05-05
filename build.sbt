@@ -1,11 +1,13 @@
-ThisBuild / scalaVersion := "3.7.0-RC1"
+ThisBuild / scalaVersion := "3.6.4"
 ThisBuild / organization := "com.kubukoz.smithy4s-bsp"
 
 lazy val transformation = project
   .settings(
     scalaVersion := "2.12.20",
     libraryDependencies ++= Seq(
-      "software.amazon.smithy" % "smithy-build" % "1.56.0"
+      "software.amazon.smithy" % "smithy-build" % "1.56.0",
+      "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
+      "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",
     ),
     publish / skip := true,
   )
@@ -18,7 +20,12 @@ lazy val codegen = project
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
-    Compile / smithy4sModelTransformers := List("rename-scala-namespace"),
+    Compile / smithy4sModelTransformers := List(
+      "untagged-unions",
+      "set-shapes",
+      "open-enums",
+      "rename-scala-namespace",
+    ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
   )
   .enablePlugins(Smithy4sCodegenPlugin)
@@ -29,6 +36,7 @@ lazy val sampleServer = project
       "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7",
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
+      "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
     scalacOptions ++= Seq(
       "-deprecation",
@@ -38,7 +46,7 @@ lazy val sampleServer = project
     name := "sample-server",
   )
   .dependsOn(codegen)
-  .enablePlugins(ScalaNativePlugin)
+// .enablePlugins(ScalaNativePlugin)
 
 lazy val root = project
   .in(file("."))
