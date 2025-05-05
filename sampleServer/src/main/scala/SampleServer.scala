@@ -25,6 +25,7 @@ import bsp.BuildTargetCapabilities
 import bsp.BuildServerOperation.BuildTargetSources
 import bsp.SourcesResult
 import bsp.SourceItem
+import bsp.scala_.ScalaBuildTargetData
 import bsp.SourceItemKind
 import bsp.SourcesItem
 import java.nio.file.Paths
@@ -46,7 +47,6 @@ import bsp.DependencySourcesItem
 import bsp.scala_.ScalaPlatform
 import bsp.scala_.ScalaBuildTarget
 import bsp.BuildServerOperation.OnBuildExit
-import bsp.BuildTargetDataTyped
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
@@ -86,24 +86,24 @@ object SampleServer extends IOApp.Simple {
           IO(
             WorkspaceBuildTargetsResult(
               List(
-                BuildTarget(
-                  id = targetId,
-                  tags = List(BuildTargetTag.LIBRARY),
-                  languageIds = List(LanguageId("scala")),
-                  dependencies = Nil,
-                  capabilities = BuildTargetCapabilities(
-                    canCompile = Some(true),
-                    canRun = Some(true),
-                    canTest = Some(true),
-                    canDebug = Some(true),
-                  ),
-                  displayName = Some("jk-hello"),
-                  baseDirectory = Some(
-                    URI(Paths.get("./").toAbsolutePath().toUri().toString())
-                  ),
-                  data = Some(
-                    BuildTargetDataTyped.scala(
-                      ScalaBuildTarget(
+                BuildTarget.scala(
+                  ScalaBuildTarget(
+                    id = targetId,
+                    tags = List(BuildTargetTag.LIBRARY),
+                    languageIds = List(LanguageId("scala")),
+                    dependencies = Nil,
+                    capabilities = BuildTargetCapabilities(
+                      canCompile = Some(true),
+                      canRun = Some(true),
+                      canTest = Some(true),
+                      canDebug = Some(true),
+                    ),
+                    displayName = Some("jk-hello"),
+                    baseDirectory = Some(
+                      URI(Paths.get("./").toAbsolutePath().toUri().toString())
+                    ),
+                    data = Some(
+                      ScalaBuildTargetData(
                         scalaOrganization = "org.scala-lang",
                         scalaVersion = "3.7.0-RC1",
                         scalaBinaryVersion = "3.7",
@@ -111,8 +111,8 @@ object SampleServer extends IOApp.Simple {
                         jars = Nil,
                         jvmBuildTarget = None,
                       )
-                    )
-                  ),
+                    ),
+                  )
                 )
               )
             )
