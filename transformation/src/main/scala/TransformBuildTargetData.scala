@@ -205,14 +205,16 @@ class TransformBuildTargetData extends ProjectionTransformer {
         .flatMap(optionalToOption(_))
 
       opReferences.foreach { op =>
-        lazy val newStruct = fakeTransputStruct(op, u.getId())
-
         if (op.getInputShape() == original.getId()) {
-          mb.addShape(newStruct)
-          mb.addShape(op.toBuilder().input(newStruct.getId()).build())
-        } else if (op.getOutputShape() == original.getId()) {
-          mb.addShape(newStruct)
-          mb.addShape(op.toBuilder().output(newStruct.getId()).build())
+          val wrapper = makeRpcPayloadWrapper(op, u.getId(), "Input")
+          mb.addShape(wrapper)
+          mb.addShape(op.toBuilder().input(wrapper.getId()).build())
+        }
+
+        if (op.getOutputShape() == original.getId()) {
+          val wrapper = makeRpcPayloadWrapper(op, u.getId(), "Output")
+          mb.addShape(wrapper)
+          mb.addShape(op.toBuilder().output(wrapper.getId()).build())
         }
       }
     }
@@ -236,26 +238,22 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
   }
 
-  private def fakeTransputStruct(op: OperationShape, wraps: ShapeId): StructureShape = {
-    val newStructBuilder = StructureShape.builder()
-
-    newStructBuilder
-      .id(ShapeId.fromParts(op.getId().getName(), op.getId().getName() + "Input"))
-      .addMember(
-        "data",
-        wraps,
-        _.addTrait(new RequiredTrait())
-          .addTrait(
-            new DynamicTrait(
-              ShapeId.from("smithy4sbsp.meta#rpcPayload"),
-              Node.objectNode(),
-            )
-          ),
-      )
-
-    newStructBuilder.build()
-
-  }
+  private def makeRpcPayloadWrapper(op: OperationShape, wraps: ShapeId, suffix: String)
+    : StructureShape = StructureShape
+    .builder()
+    .id(ShapeId.fromParts(op.getId().getName(), op.getId().getName() + suffix))
+    .addMember(
+      "data",
+      wraps,
+      _.addTrait(new RequiredTrait())
+        .addTrait(
+          new DynamicTrait(
+            ShapeId.from("smithy4sbsp.meta#rpcPayload"),
+            Node.objectNode(),
+          )
+        ),
+    )
+    .build()
 
   private def optionalToOption[T](o: java.util.Optional[T]): Option[T] =
     if (o.isPresent())
