@@ -238,19 +238,19 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
   private def fakeTransputStruct(op: OperationShape, wraps: ShapeId): StructureShape = {
     val newStructBuilder = StructureShape.builder()
-    newStructBuilder.addTrait(
-      new DynamicTrait(
-        ShapeId.from("smithy4sbsp.meta#rpcPayload"),
-        Node.objectNode(),
-      )
-    )
 
     newStructBuilder
       .id(ShapeId.fromParts(op.getId().getName(), op.getId().getName() + "Input"))
       .addMember(
         "data",
         wraps,
-        _.addTrait(new RequiredTrait()),
+        _.addTrait(new RequiredTrait())
+          .addTrait(
+            new DynamicTrait(
+              ShapeId.from("smithy4sbsp.meta#rpcPayload"),
+              Node.objectNode(),
+            )
+          ),
       )
 
     newStructBuilder.build()

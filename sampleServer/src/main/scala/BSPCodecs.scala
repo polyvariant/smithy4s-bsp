@@ -38,18 +38,15 @@ object BSPCodecs {
   private def bspTransformations: Schema ~> Schema =
     new (Schema ~> Schema) {
       def apply[A0](fa: Schema[A0]): Schema[A0] =
-        fa.hints match {
-          case RpcPayload.hint(_) =>
-            // we need to flatten this, meaning it's a struct of just 1 member and we need to encode it
-            // as if it was just the member.
-            fa match {
-              case struu: StructSchema[b] =>
-                require(struu.fields.sizeIs == 1)
-                val field = struu.fields.head
-                field.schema.biject[b](f => struu.make(Vector(f)))(field.get)
-              case _ =>
-                sys.error("Unexpected non-struct schema used with RpcPayload: " + fa.shapeId)
-            }
+        fa match {
+          case struct: StructSchema[b] =>
+            struct
+              .fields
+              .collectFirst {
+                case field if field.hints.has[RpcPayload] =>
+                  field.schema.biject[b](f => struct.make(Vector(f)))(field.get)
+              }
+              .getOrElse(fa)
           case _ => fa
         }
     }

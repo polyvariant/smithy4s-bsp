@@ -13,7 +13,7 @@ lazy val transformation = project
   )
 
 lazy val codegen = project
-  .enablePlugins(ScalaNativePlugin)
+  // .enablePlugins(ScalaNativePlugin)
   .settings(
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
