@@ -26,16 +26,24 @@ import java.nio.file.Paths
 
 object TransformBuildTargetDataTest extends FunSuite {
   test("Sample transformation of data") {
+    transformationComparisonTest(os.sub / "sampleDataTraits")
+  }
+
+  test("Multiple datas using the same dataKind") {
+    transformationComparisonTest(os.sub / "multiDataTraits")
+  }
+
+  private def transformationComparisonTest(directory: os.SubPath) = {
 
     val result = new TransformBuildTargetData().transform(
       TransformContext
         .builder()
-        .model(loadModel(os.sub / "smithy" / "sampleDataTraits" / "input.smithy"))
+        .model(loadModel(os.sub / "smithy" / directory / "input.smithy"))
         .build()
     )
 
     val expected = loadModel(
-      os.sub / "smithy" / "sampleDataTraits" / "expected.smithy"
+      os.sub / "smithy" / directory / "expected.smithy"
     )
 
     val diff =

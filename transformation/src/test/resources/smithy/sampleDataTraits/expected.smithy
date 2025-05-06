@@ -3,15 +3,11 @@ $version: "2.0"
 namespace sample
 
 use alloy#discriminated
+use smithy4s.meta#adt
 
-structure FullDinner with [MealCommon] {
-    @required
-    data: FullDinnerData
-}
-
-structure FullDinnerData {
-    ramen: RamenData
-    steak: SteakData
+structure FullDinner {
+    ramen: Ramen
+    steak: Steak
 }
 
 @mixin
@@ -20,12 +16,22 @@ structure MealCommon {
     name: String
 }
 
-structure Ramen with [MealCommon] {
+structure MealFullDinner with [MealCommon] {
     @required
-    data: RamenData
+    data: FullDinner
 }
 
-structure RamenData {
+structure MealRamen with [MealCommon] {
+    @required
+    data: Ramen
+}
+
+structure MealSteak with [MealCommon] {
+    @required
+    data: Steak
+}
+
+structure Ramen {
     @required
     pork: Boolean
 
@@ -33,24 +39,20 @@ structure RamenData {
     chicken: Boolean
 }
 
-structure Steak with [MealCommon] {
-    @required
-    data: SteakData
-}
-
-structure SteakData {
+structure Steak {
     @required
     cookLevel: String
 }
 
+@adt
 @discriminated("dataKind")
 union Meal {
     @jsonName("full-dinner")
-    full_dinner: FullDinner
+    full_dinner: MealFullDinner
 
     @jsonName("ramen")
-    ramen: Ramen
+    ramen: MealRamen
 
     @jsonName("steak")
-    steak: Steak
+    steak: MealSteak
 }

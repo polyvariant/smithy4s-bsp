@@ -44,7 +44,6 @@ import bsp.BuildTargetCapabilities
 import bsp.BuildServerOperation.BuildTargetSources
 import bsp.SourcesResult
 import bsp.SourceItem
-import bsp.scala_.ScalaBuildTargetData
 import bsp.SourceItemKind
 import bsp.SourcesItem
 import java.nio.file.Paths
@@ -106,33 +105,31 @@ object SampleServer extends IOApp.Simple {
           IO(
             WorkspaceBuildTargetsResult(
               List(
-                BuildTarget.scala(
-                  ScalaBuildTarget(
-                    id = targetId,
-                    tags = List(BuildTargetTag.LIBRARY),
-                    languageIds = List(LanguageId("scala")),
-                    dependencies = Nil,
-                    capabilities = BuildTargetCapabilities(
-                      canCompile = Some(true),
-                      canRun = Some(true),
-                      canTest = Some(true),
-                      canDebug = Some(true),
-                    ),
-                    displayName = Some("jk-hello"),
-                    baseDirectory = Some(
-                      URI(Paths.get("./").toAbsolutePath().toUri().toString())
-                    ),
-                    data = Some(
-                      ScalaBuildTargetData(
-                        scalaOrganization = "org.scala-lang",
-                        scalaVersion = "3.7.0-RC1",
-                        scalaBinaryVersion = "3.7",
-                        platform = ScalaPlatform.JVM,
-                        jars = Nil,
-                        jvmBuildTarget = None,
-                      )
-                    ),
-                  )
+                BuildTarget.buildTargetScalaBuildTarget(
+                  id = targetId,
+                  tags = List(BuildTargetTag.LIBRARY),
+                  languageIds = List(LanguageId("scala")),
+                  dependencies = Nil,
+                  capabilities = BuildTargetCapabilities(
+                    canCompile = Some(true),
+                    canRun = Some(true),
+                    canTest = Some(true),
+                    canDebug = Some(true),
+                  ),
+                  displayName = Some("jk-hello"),
+                  baseDirectory = Some(
+                    URI(Paths.get("./").toAbsolutePath().toUri().toString())
+                  ),
+                  data = Some(
+                    ScalaBuildTarget(
+                      scalaOrganization = "org.scala-lang",
+                      scalaVersion = "3.7.0-RC1",
+                      scalaBinaryVersion = "3.7",
+                      platform = ScalaPlatform.JVM,
+                      jars = Nil,
+                      jvmBuildTarget = None,
+                    )
+                  ),
                 )
               )
             )

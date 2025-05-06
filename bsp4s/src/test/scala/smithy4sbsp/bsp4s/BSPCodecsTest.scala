@@ -40,7 +40,6 @@ import bsp.LanguageId
 import bsp.URI
 import bsp.WorkspaceBuildTargetsResult
 import bsp.scala_.ScalaBuildTarget
-import bsp.scala_.ScalaBuildTargetData
 import bsp.scala_.ScalaPlatform
 import cats.effect.IO
 import smithy4s.Document
@@ -51,15 +50,14 @@ import java.nio.file.Paths
 import smithy4s.schema.Schema
 import BuildTargetTest.BuildTargetTestInput
 import bsp.TestParams
-import bsp.scala_.ScalaTestParams
-import bsp.jvm.JvmBuildTargetData
 import scala.annotation.nowarn
+import bsp.jvm.JvmBuildTarget
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
     val input = BuildTargetTestInput(
-      data = TestParams.scala_test(
-        ScalaTestParams(targets = Nil)
+      data = TestParams.testParamsScalaTestParams(
+        targets = Nil
       )
     )
 
@@ -76,33 +74,31 @@ object BSPCodecsTest extends FunSuite {
 
     val input = WorkspaceBuildTargetsResult(
       List(
-        BuildTarget.scala(
-          ScalaBuildTarget(
-            id = targetId,
-            tags = List(BuildTargetTag.LIBRARY),
-            languageIds = List(LanguageId("scala")),
-            dependencies = Nil,
-            capabilities = BuildTargetCapabilities(
-              canCompile = Some(true),
-              canRun = Some(true),
-              canTest = Some(true),
-              canDebug = Some(true),
-            ),
-            displayName = Some("jk-hello"),
-            baseDirectory = Some(
-              URI(Paths.get("/foo/bar").toUri().toString())
-            ),
-            data = Some(
-              ScalaBuildTargetData(
-                scalaOrganization = "org.scala-lang",
-                scalaVersion = "3.7.0-RC1",
-                scalaBinaryVersion = "3.7",
-                platform = ScalaPlatform.JVM,
-                jars = Nil,
-                jvmBuildTarget = None,
-              )
-            ),
-          )
+        BuildTarget.buildTargetScalaBuildTarget(
+          id = targetId,
+          tags = List(BuildTargetTag.LIBRARY),
+          languageIds = List(LanguageId("scala")),
+          dependencies = Nil,
+          capabilities = BuildTargetCapabilities(
+            canCompile = Some(true),
+            canRun = Some(true),
+            canTest = Some(true),
+            canDebug = Some(true),
+          ),
+          displayName = Some("jk-hello"),
+          baseDirectory = Some(
+            URI(Paths.get("/foo/bar").toUri().toString())
+          ),
+          data = Some(
+            ScalaBuildTarget(
+              scalaOrganization = "org.scala-lang",
+              scalaVersion = "3.7.0-RC1",
+              scalaBinaryVersion = "3.7",
+              platform = ScalaPlatform.JVM,
+              jars = Nil,
+              jvmBuildTarget = None,
+            )
+          ),
         )
       )
     )
@@ -147,8 +143,8 @@ object BSPCodecsTest extends FunSuite {
 
   // compilation test
   @nowarn("msg=unused")
-  def sanityCheck(t: ScalaBuildTarget): Unit = {
-    val bt: JvmBuildTargetData = t.data.get.jvmBuildTarget.get
+  def sanityCheck(t: BuildTarget.BuildTargetScalaBuildTarget): Unit = {
+    val bt: JvmBuildTarget = t.data.get.jvmBuildTarget.get
     val jvm: Option[String] = bt.javaVersion
   }
 
