@@ -38,10 +38,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
     // BuildTargetData -> Set(ScalaBuildTarget, CppBuildTarget, ...)
     val mapping = makeDataKindMapping(m)
 
-    val mb = Model.builder().addShapes(m.shapes().toList())
-
-    // All references to the shapes in the mapping keys/
-    // BuildTarget$data -> BuildTargetData
+    // All references to the shapes in the mapping keys.
+    // e.g. BuildTarget$data
     val references =
       mapping
         .keySet
@@ -54,6 +52,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
             .map(_.getShape().asMemberShape().get())
         }
         .toSet
+
+    val mb = Model.builder().addShapes(m.shapes().toList())
 
     val dataUnions = references.map { baseDataMember =>
       transformRef(baseDataMember, mapping(baseDataMember.getTarget()), mb, m)
