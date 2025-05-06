@@ -1,3 +1,4 @@
+package smithy4sbsp.bsp4s
 /*
  * Copyright 2025 Polyvariant
  *
