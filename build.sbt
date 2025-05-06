@@ -7,7 +7,8 @@ ThisBuild / developers := List(tlGitHubDev("kubukoz", "Jakub Kozłowski"))
 ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatype01
 
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
-  RefPredicate.Equals(Ref.Branch("main"))
+  RefPredicate.Equals(Ref.Branch("main")),
+  RefPredicate.StartsWith(Ref.Tag("v")),
 )
 
 ThisBuild / scalaVersion := "3.3.5"
