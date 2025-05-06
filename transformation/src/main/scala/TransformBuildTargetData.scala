@@ -1,33 +1,33 @@
+import alloy.DiscriminatedUnionTrait
+import bsp.traits.DataKindTrait
 import software.amazon.smithy.build.ProjectionTransformer
-
 import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.transform.ModelTransformer
-import scala.collection.JavaConverters._
-import java.util.stream.Collectors
-import software.amazon.smithy.model.shapes.ShapeId
-import bsp.traits.DataKindTrait
-import software.amazon.smithy.model.shapes.UnionShape
-import software.amazon.smithy.model.traits.TraitService
-import java.util.ServiceLoader
-import software.amazon.smithy.model.shapes.AbstractShapeBuilder
-import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.shapes.ShapeType
+import software.amazon.smithy.model.neighbor.NeighborProvider
 import software.amazon.smithy.model.node.Node
 import software.amazon.smithy.model.node.NodeVisitor
 import software.amazon.smithy.model.node.ToNode
-import software.amazon.smithy.model.neighbor.NeighborProvider
-import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
-import java.nio.file.Paths
-import java.nio.file.Files
-import software.amazon.smithy.model.traits.DynamicTrait
-import software.amazon.smithy.model.shapes.StructureShape
+import software.amazon.smithy.model.shapes.AbstractShapeBuilder
+import software.amazon.smithy.model.shapes.MemberShape
 import software.amazon.smithy.model.shapes.OperationShape
-import software.amazon.smithy.model.traits.RequiredTrait
-import alloy.DiscriminatedUnionTrait
+import software.amazon.smithy.model.shapes.Shape
+import software.amazon.smithy.model.shapes.ShapeId
+import software.amazon.smithy.model.shapes.ShapeType
+import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
+import software.amazon.smithy.model.shapes.StructureShape
+import software.amazon.smithy.model.shapes.UnionShape
+import software.amazon.smithy.model.traits.DynamicTrait
 import software.amazon.smithy.model.traits.JsonNameTrait
 import software.amazon.smithy.model.traits.MixinTrait
-import software.amazon.smithy.model.shapes.MemberShape
+import software.amazon.smithy.model.traits.RequiredTrait
+import software.amazon.smithy.model.traits.TraitService
+import software.amazon.smithy.model.transform.ModelTransformer
+
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.ServiceLoader
+import java.util.stream.Collectors
+import scala.collection.JavaConverters._
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
