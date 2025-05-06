@@ -75,5 +75,5 @@ lazy val sampleServer = project
 
 lazy val root = project
   .in(file("."))
-  .aggregate(sampleServer, codegen, transformation)
+  .aggregate(bsp4s, sampleServer, codegen, transformation)
   .enablePlugins(NoPublishPlugin)
