@@ -1,3 +1,5 @@
+package smithy4sbsp.bsp4s
+
 import cats.syntax.all.*
 
 import jsonrpclib.Codec

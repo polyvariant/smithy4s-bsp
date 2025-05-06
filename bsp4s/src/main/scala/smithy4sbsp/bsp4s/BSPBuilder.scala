@@ -1,3 +1,5 @@
+package smithy4sbsp.bsp4s
+
 import bsp.traits.JsonNotification
 
 import bsp.traits.JsonRequest

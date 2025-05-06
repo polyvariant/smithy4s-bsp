@@ -1,3 +1,5 @@
+package sampleServer
+
 import bsp.BuildServer
 
 import bsp.BuildServerCapabilities
@@ -48,6 +50,7 @@ import bsp.DependencySourcesItem
 import bsp.scala_.ScalaPlatform
 import bsp.scala_.ScalaBuildTarget
 import bsp.BuildServerOperation.OnBuildExit
+import smithy4sbsp.bsp4s.BSPBuilder
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
