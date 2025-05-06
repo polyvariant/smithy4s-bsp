@@ -4,7 +4,7 @@ ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
 ThisBuild / licenses := Seq(License.Apache2)
 ThisBuild / developers := List( /* tlGitHubDev() */ )
-ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatypeLegacy
+ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatype01
 
 ThisBuild / scalaVersion := "3.3.5"
 ThisBuild / tlJdkRelease := Some(11)
