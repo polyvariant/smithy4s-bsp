@@ -36,6 +36,8 @@ import software.amazon.smithy.model.traits.RequiredTrait
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.JavaConverters.*
+import software.amazon.smithy.model.shapes.AbstractShapeBuilder
+import smithy4s.meta.AdtTrait
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -62,6 +64,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         .toSet
 
     val mb = m.toBuilder()
+    // removing the @data shapes
     mapping.keySet.foreach(mb.removeShape)
 
     references.foreach { baseDataMember =>
@@ -110,10 +113,20 @@ class TransformBuildTargetData extends ProjectionTransformer {
       .addTrait(
         new DiscriminatedUnionTrait("dataKind")
       )
+      .addTrait(
+        new AdtTrait()
+      )
 
     targetRefs.toList.sorted.foreach { targetRef =>
       mb.removeShape(targetRef.getId())
-      makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
+      val (newDataStruct, newTarget) = makeNewUnionTarget(
+        parent.getId(),
+        targetRef,
+        List(mixinForMembers),
+        baseDataMember,
+      )
+
+      List(newDataStruct, newTarget)
         .foreach(mb.addShape)
 
       val dataKind = expectDataKind(targetRef).getKind()
@@ -123,7 +136,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         dataKind.replace("-", "_"),
         // at this point this won't be the same shape as targetRef
         // but the ID is the same.
-        targetRef.getId(),
+        newTarget.getId(),
         _.addTrait(
           new JsonNameTrait(dataKind)
         ),
@@ -138,17 +151,22 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
   // Creates a new structure shape that will become a target of the new union. For example, ScalaBuildTarget.
   // It will have all the BuildTarget fields (due to the mixin), and a `data: ScalaBuildTargetData`` field.
-  // returns the shapes that were created, in no particular order.
+  // returns the union target's `data` field target, and the union target itself.
   private def makeNewUnionTarget(
+    unionName: ShapeId,
     targetRef: Shape,
     mixins: List[Shape],
     baseDataMember: MemberShape,
-  ): List[Shape] = {
+  ): (Shape, Shape) = {
     val newDataStruct = makeDataStruct(targetRef)
 
     val newStructBuilder = StructureShape
       .builder()
-      .id(targetRef.getId())
+      .id {
+        val base = targetRef.getId()
+        val newName = base.getName()
+        ShapeId.fromParts(base.getNamespace(), unionName.getName + newName)
+      }
 
     newStructBuilder
       .traits(
@@ -170,35 +188,16 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
     val newStruct = newStructBuilder.build()
 
-    List(
-      newStruct,
+    (
       newDataStruct,
+      newStruct,
     )
   }
 
-  // Copies all the members of targetRef into a new structure shape
-  // renamed with a Data suffix to avoid conflicting with the enclosing struct.
-  // Used to copy `ScalaBuildTarget` into `ScalaBuildTargetData`.
-  private def makeDataStruct(targetRef: Shape): StructureShape = {
-    val builder = StructureShape
-      .builder()
-      .id(
-        ShapeId
-          .fromParts(targetRef.getId().getNamespace(), targetRef.getId().getName() + "Data")
-      )
-
-    targetRef
-      .members()
-      .asScala
-      .foreach { m =>
-        builder.addMember(
-          m.getMemberName(),
-          m.getTarget(),
-          _.addTraits(m.getIntroducedTraits().values()),
-        )
-      }
-
-    builder.build()
+  // Removes the dataKind trait from the data struct.
+  private def makeDataStruct(targetRef: Shape): Shape = {
+    val b = Shape.shapeToBuilder(targetRef): AbstractShapeBuilder[_, _]
+    b.removeTrait(DataKindTrait.ID).build()
   }
 
   // Creates a mapping of each shape marked with DataKind, to shapes that extend that kind.
