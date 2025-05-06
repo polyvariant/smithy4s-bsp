@@ -19,9 +19,6 @@ import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.transform.ModelTransformer
 import bsp.traits.JsonNotificationTrait
-import software.amazon.smithy.model.traits.DynamicTrait
-import software.amazon.smithy.model.shapes.ShapeId
-import software.amazon.smithy.model.node.Node
 import bsp.traits.JsonRequestTrait
 import bsp.traits.JsonRPCTrait
 
@@ -37,19 +34,15 @@ class TransformJsonRpcTraits extends ProjectionTransformer {
           case s if s.hasTrait(JsonRPCTrait.ID) =>
             val builder = s.asServiceShape.get.toBuilder()
             builder.removeTrait(JsonRPCTrait.ID)
-            // generate these traits Kasper!
-            builder.addTrait(
-              new DynamicTrait(ShapeId.from("jsonrpclib#jsonRPC"), Node.objectNode())
-            )
+            builder.addTrait(jsonrpclib.JsonRPCTrait.builder().build())
             builder.build()
 
           case s if s.hasTrait(JsonNotificationTrait.ID) =>
             val builder = s.asOperationShape.get.toBuilder()
             builder.removeTrait(JsonNotificationTrait.ID)
-            // generate these traits Kasper!
             builder.addTrait(
-              new DynamicTrait(
-                ShapeId.from("jsonrpclib#jsonNotification"),
+              new jsonrpclib.JsonNotificationTrait.Provider().createTrait(
+                jsonrpclib.JsonNotificationTrait.ID,
                 s.getAllTraits().get(JsonNotificationTrait.ID).toNode(),
               )
             )
@@ -58,10 +51,9 @@ class TransformJsonRpcTraits extends ProjectionTransformer {
           case s if s.hasTrait(JsonRequestTrait.ID) =>
             val builder = s.asOperationShape.get.toBuilder()
             builder.removeTrait(JsonRequestTrait.ID)
-            // generate these traits Kasper!
             builder.addTrait(
-              new DynamicTrait(
-                ShapeId.from("jsonrpclib#jsonRequest"),
+              new jsonrpclib.JsonRequestTrait.Provider().createTrait(
+                jsonrpclib.JsonRequestTrait.ID,
                 s.getAllTraits().get(JsonRequestTrait.ID).toNode(),
               )
             )
