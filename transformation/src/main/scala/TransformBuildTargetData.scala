@@ -35,7 +35,6 @@ import software.amazon.smithy.model.traits.RequiredTrait
 
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.stream.Collectors
 import scala.collection.JavaConverters.*
 
 class TransformBuildTargetData extends ProjectionTransformer {
@@ -62,7 +61,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
         }
         .toSet
 
-    val mb = Model.builder().addShapes(m.shapes().collect(Collectors.toList()))
+    val mb = m.toBuilder()
+    mapping.keySet.foreach(mb.removeShape)
 
     references.foreach { baseDataMember =>
       transformRef(baseDataMember, mapping(baseDataMember.getTarget()), mb, m)
@@ -99,6 +99,9 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
     mb.addShape(mixinForMembers)
 
+    // need to remove this shape so that its leftover members also disappear
+    mb.removeShape(parent.getId())
+
     val unionBuilder = UnionShape
       .builder()
       .id(parent.getId())
@@ -108,7 +111,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
         new DiscriminatedUnionTrait("dataKind")
       )
 
-    targetRefs.foreach { targetRef =>
+    targetRefs.toList.sorted.foreach { targetRef =>
+      mb.removeShape(targetRef.getId())
       makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
         .foreach(mb.addShape)
 

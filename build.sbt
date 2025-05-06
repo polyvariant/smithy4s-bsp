@@ -17,21 +17,32 @@ ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
-  scalacOptions ++= Seq(
-    "-Ykind-projector",
-    "-deprecation",
-    "-Wunused:all",
+  scalacOptions ++= {
+    if (scalaVersion.value.startsWith("3"))
+      Seq(
+        "-Ykind-projector",
+        "-deprecation",
+        "-Wunused:all",
+      )
+    else
+      Nil
+  },
+  libraryDependencies ++= Seq(
+    "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test
   ),
 )
 
 lazy val transformation = project
   .settings(
+    commonSettings,
     scalaVersion := "2.12.20",
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.57.1",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % "0.0.8+20-8d37b4ca-SNAPSHOT",
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",
+      "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
+      "software.amazon.smithy" % "smithy-diff" % "1.57.1" % Test,
     ),
     publish / skip := true,
   )
@@ -64,7 +75,6 @@ lazy val bsp4s = project
       "org.typelevel" %% "cats-effect-kernel" % "3.6.1",
       "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+20-8d37b4ca-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
-      "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
   )
   .dependsOn(codegen)
