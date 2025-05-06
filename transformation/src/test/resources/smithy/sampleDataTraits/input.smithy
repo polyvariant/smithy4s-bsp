@@ -18,7 +18,7 @@ structure Steak {
 }
 
 @dataKind(
-    kind: "ra-men"
+    kind: "ramen"
     extends: [MealData]
 )
 structure Ramen {
@@ -27,6 +27,15 @@ structure Ramen {
 
     @required
     chicken: Boolean
+}
+
+@dataKind(
+    kind: "full-dinner"
+    extends: [MealData]
+)
+structure FullDinner {
+    ramen: Ramen
+    steak: Steak
 }
 
 structure Meal {
