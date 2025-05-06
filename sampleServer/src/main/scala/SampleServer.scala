@@ -25,6 +25,7 @@ import bsp.BuildTargetCapabilities
 import bsp.BuildServerOperation.BuildTargetSources
 import bsp.SourcesResult
 import bsp.SourceItem
+import bsp.scala_.ScalaBuildTargetData
 import bsp.SourceItemKind
 import bsp.SourcesItem
 import java.nio.file.Paths
@@ -43,8 +44,6 @@ import bsp.BuildServerOperation.BuildTargetCleanCache
 import bsp.CleanCacheResult
 import bsp.scala_.ScalacOptionsItem
 import bsp.DependencySourcesItem
-import bsp.BuildTargetData
-import smithy4s.Document
 import bsp.scala_.ScalaPlatform
 import bsp.scala_.ScalaBuildTarget
 import bsp.BuildServerOperation.OnBuildExit
@@ -87,35 +86,33 @@ object SampleServer extends IOApp.Simple {
           IO(
             WorkspaceBuildTargetsResult(
               List(
-                BuildTarget(
-                  id = targetId,
-                  tags = List(BuildTargetTag.LIBRARY),
-                  languageIds = List(LanguageId("scala")),
-                  dependencies = Nil,
-                  capabilities = BuildTargetCapabilities(
-                    canCompile = Some(true),
-                    canRun = Some(true),
-                    canTest = Some(true),
-                    canDebug = Some(true),
-                  ),
-                  displayName = Some("jk-hello"),
-                  baseDirectory = Some(
-                    URI(Paths.get("./").toAbsolutePath().toUri().toString())
-                  ),
-                  data = Some(
-                    BuildTargetData(
-                      Document.encode(
-                        ScalaBuildTarget(
-                          scalaOrganization = "org.scala-lang",
-                          scalaVersion = "3.7.0-RC1",
-                          scalaBinaryVersion = "3.7",
-                          platform = ScalaPlatform.JVM,
-                          jars = Nil,
-                          jvmBuildTarget = None,
-                        )
+                BuildTarget.scala(
+                  ScalaBuildTarget(
+                    id = targetId,
+                    tags = List(BuildTargetTag.LIBRARY),
+                    languageIds = List(LanguageId("scala")),
+                    dependencies = Nil,
+                    capabilities = BuildTargetCapabilities(
+                      canCompile = Some(true),
+                      canRun = Some(true),
+                      canTest = Some(true),
+                      canDebug = Some(true),
+                    ),
+                    displayName = Some("jk-hello"),
+                    baseDirectory = Some(
+                      URI(Paths.get("./").toAbsolutePath().toUri().toString())
+                    ),
+                    data = Some(
+                      ScalaBuildTargetData(
+                        scalaOrganization = "org.scala-lang",
+                        scalaVersion = "3.7.0-RC1",
+                        scalaBinaryVersion = "3.7",
+                        platform = ScalaPlatform.JVM,
+                        jars = Nil,
+                        jvmBuildTarget = None,
                       )
-                    )
-                  ),
+                    ),
+                  )
                 )
               )
             )
