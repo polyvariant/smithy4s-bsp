@@ -27,6 +27,7 @@ import software.amazon.smithy.model.traits.RequiredTrait
 import alloy.DiscriminatedUnionTrait
 import software.amazon.smithy.model.traits.JsonNameTrait
 import software.amazon.smithy.model.traits.MixinTrait
+import software.amazon.smithy.model.shapes.MemberShape
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -37,6 +38,171 @@ class TransformBuildTargetData extends ProjectionTransformer {
     ServiceLoader.load(classOf[TraitService]).asScala.foreach(println)
 
     // BuildTargetData -> Set(ScalaBuildTarget, CppBuildTarget, ...)
+    val mapping = makeDataKindMapping(m)
+
+    val mb = Model.builder().addShapes(m.shapes().toList())
+
+    // BuildTarget$data -> BuildTargetData
+    val references =
+      mapping.flatMap { case (dataType, _) =>
+        val np = NeighborProvider
+          .reverse(m)
+
+        np
+          .getNeighbors(m.expectShape(dataType))
+          .asScala
+          .map(_.getShape().asMemberShape().get())
+      }.toSet
+
+    val dataUnions = references.map { baseDataMember =>
+      // baseDataMember: e.g. BuildTarget$data.
+
+      // parent: e.g. BuildTarget. It is a struct,
+      // it needs to become a union of N shapes.
+      // N is equal to the size of mapping(target.getId()).
+      val parent = m.expectShape(baseDataMember.getId().withoutMember()).asStructureShape().get()
+
+      // target: e.g. BuildTargetData. It's a document.
+      // this shape effectively disappears from the model.
+      val target = m.expectShape(baseDataMember.getTarget()).asDocumentShape().get()
+
+      val targetRefs = mapping(target.getId())
+
+      val mixinForMembers = makeMixinForMembers(
+        originalOwner = parent,
+        originalDataMember = baseDataMember,
+      )
+
+      mb.addShape(mixinForMembers)
+
+      val unionBuilder = UnionShape
+        .builder()
+        .id(parent.getId())
+
+      unionBuilder
+        .addTrait(
+          new DiscriminatedUnionTrait("dataKind")
+        )
+
+      val unionTargets = targetRefs.map { targetRef =>
+        makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
+          .foreach(mb.addShape)
+
+        val dataKind = targetRef.expectTrait(classOf[DataKindTrait]).getKind()
+
+        unionBuilder.addMember(
+          // escaping, the smithy model doesn't like hyphens in member names
+          dataKind.replace("-", "_"),
+          // at this point this won't be the same shape as targetRef
+          // but the ID is the same.
+          targetRef.getId(),
+          _.addTrait(
+            new JsonNameTrait(dataKind)
+          ),
+        )
+      }
+
+      unionBuilder.build()
+    }
+
+    dataUnions.foreach(mb.addShape(_))
+
+    dataUnions.foreach(updateOperations(_, mb, m))
+
+    val transformed = mb.build()
+
+    dump(transformed)
+
+    transformed
+  }
+
+  private case class UnionTarget(
+    newStruct: Shape,
+    newDataStruct: Shape,
+  )
+
+  // Copies all the members of targetRef into a new structure shape
+  // renamed with a Data suffix to avoid conflicting with the enclosing struct.
+  // Used to copy `ScalaBuildTarget` into `ScalaBuildTargetData`.
+  private def makeDataStruct(targetRef: Shape): StructureShape = {
+    val builder = StructureShape
+      .builder()
+      .id(
+        ShapeId
+          .fromParts(targetRef.getId().getNamespace(), targetRef.getId().getName() + "Data")
+      )
+
+    targetRef
+      .members()
+      .asScala
+      .foreach { m =>
+        builder.addMember(
+          m.getMemberName(),
+          m.getTarget(),
+          _.addTraits(m.getIntroducedTraits().values()),
+        )
+      }
+
+    builder.build()
+  }
+
+  // Creates a new structure shape that will become a target of the new union. For example, ScalaBuildTarget.
+  // It will have all the BuildTarget fields (due to the mixin), and a `data: ScalaBuildTargetData`` field.
+  // returns the shapes that were created, in no particular order.
+  private def makeNewUnionTarget(
+    targetRef: Shape,
+    mixins: List[Shape],
+    baseDataMember: MemberShape,
+  ): List[Shape] = {
+    val newDataStruct = makeDataStruct(targetRef)
+
+    val newStructBuilder = StructureShape
+      .builder()
+      .id(targetRef.getId())
+
+    newStructBuilder
+      .traits(
+        targetRef
+          .getIntroducedTraits()
+          .asScala
+          .values
+          .filterNot(_.toShapeId() == DataKindTrait.ID)
+          .toList
+          .asJava
+      )
+      .mixins(mixins.asJava)
+
+    newStructBuilder.addMember(
+      baseDataMember.getMemberName(),
+      newDataStruct.getId(),
+      _.addTraits(baseDataMember.getIntroducedTraits().values()),
+    )
+
+    val newStruct = newStructBuilder.build()
+
+    List(
+      newStruct,
+      newDataStruct,
+    )
+  }
+
+  // for debugging modified smithy
+  private def dump(m: Model): Unit = {
+    val debug = false
+    if (debug) {
+      Files.createDirectories(Paths.get("smithyoutput"))
+      SmithyIdlModelSerializer
+        .builder()
+        .basePath(Paths.get("smithyoutput"))
+        .build()
+        .serialize(m)
+        .asScala
+        .foreach { case (k, v) => Files.writeString(k, v) }
+    }
+  }
+
+  // Creates a mapping of each shape marked with DataKind, to shapes that extend that kind.
+  private def makeDataKindMapping(m: Model): Map[ShapeId, Set[Shape]] = {
     val mapping = m
       .getShapesWithTrait(DataKindTrait.ID)
       .asScala
@@ -60,7 +226,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
           .map(_ -> updatedKind)
       }
       .groupBy(_._1)
-      .map { case (k, vs) => (k, vs.map(_._2)) }
+      .map { case (k, vs) => (k, vs.map(_._2).toSet) }
 
     mapping.foreach { case (k, _) =>
       assert(
@@ -68,174 +234,58 @@ class TransformBuildTargetData extends ProjectionTransformer {
         s"Expected $k to be a document shape, but it's a ${m.expectShape(k)} instead",
       )
     }
+    mapping
+  }
 
-    val mb = Model.builder().addShapes(m.shapes().toList())
+  // Creates a mixin with all the fields of the original owner, except for the data member.
+  private def makeMixinForMembers(originalOwner: Shape, originalDataMember: Shape)
+    : StructureShape = {
+    val builder = StructureShape
+      .builder()
+      .id(originalOwner.getId() + "Common")
+      .addTrait(MixinTrait.builder.build())
 
-    // BuildTarget$data -> BuildTargetData
-    val references =
-      mapping.flatMap { case (dataType, _) =>
-        val np = NeighborProvider
-          .reverse(m)
-
-        np
-          .getNeighbors(m.expectShape(dataType))
-          .asScala
-          .map(_.getShape().asMemberShape().get())
-      }.toSet
-
-    val newShapes = references.map { baseDataMember =>
-      // baseDataMember: e.g. BuildTarget$data.
-
-      // parent: e.g. BuildTarget. It is a struct,
-      // it needs to become a union of N shapes.
-      // N is equal to the size of mapping(baseDataType).
-      val parent = m.expectShape(baseDataMember.getId().withoutMember()).asStructureShape().get()
-
-      // target: e.g. BuildTargetData. It's a document.
-      // this shape effectively disappears from the model.
-      val target = m.expectShape(baseDataMember.getTarget()).asDocumentShape().get()
-
-      val targetRefs = mapping(target.getId())
-
-      val mixinForMembersBuilder = StructureShape
-        .builder()
-        .id(parent.getId() + "Common")
-        .addTrait(MixinTrait.builder.build())
-
-      def addNonDataMembers(toStruct: StructureShape.Builder): Unit = parent
-        .members()
-        .asScala
-        .filterNot(_.getId() == baseDataMember.getId())
-        .foreach { member =>
-          toStruct.addMember(
-            member.getMemberName(),
-            member.getTarget(),
-            _.traits(member.getIntroducedTraits().values()),
-          )
-        }
-
-      addNonDataMembers(mixinForMembersBuilder)
-
-      val mixinForMembers = mixinForMembersBuilder.build()
-
-      mb.addShape(mixinForMembers)
-
-      val unionTargets = targetRefs.map { targetRef =>
-        val newStructBuilder = StructureShape
-          .builder()
-          .id(targetRef.getId())
-
-        newStructBuilder
-          .traits(
-            targetRef
-              .getIntroducedTraits()
-              .asScala
-              .values
-              .filterNot(_.toShapeId() == DataKindTrait.ID)
-              .toList
-              .asJava
-          )
-          // the mixin adds all the common fields, so we don't need to do it ourselves
-          .mixins(List(mixinForMembers).asJava)
-
-        val newDataStructBuilder = StructureShape
-          .builder()
-          .id(
-            ShapeId
-              .fromParts(targetRef.getId().getNamespace(), targetRef.getId().getName() + "Data")
-          )
-
-        newDataStructBuilder.members(
-          targetRef
-            .members()
-            .asScala
-            .map { m =>
-              m.toBuilder.id(newDataStructBuilder.getId().withMember(m.getMemberName())).build()
-            }
-            .toList
-            .asJava
-        )
-
-        val newDataStruct = newDataStructBuilder.build()
-        mb.addShape(newDataStruct)
-
-        newStructBuilder.addMember(
-          baseDataMember.getMemberName(),
-          newDataStruct.getId(),
-          _.addTraits(baseDataMember.getIntroducedTraits().values()),
-        )
-
-        val newStruct = newStructBuilder.build()
-
-        mb.removeShape(targetRef.getId())
-        mb.addShape(newStruct)
-
-        targetRef -> newStruct
-      }
-
-      val unionBuilder = UnionShape.builder().id(parent.getId())
-
-      unionBuilder.addTrait(
-        new DiscriminatedUnionTrait("dataKind")
-      )
-
-      unionTargets.foreach { case (original, targetRef) =>
-        val dataKind = original.expectTrait(classOf[DataKindTrait]).getKind()
-        unionBuilder.addMember(
-          dataKind.replace("-", "_"),
-          targetRef.getId(),
-          _.addTrait(
-            new JsonNameTrait(dataKind)
-          ),
+    def addNonDataMembers(toStruct: StructureShape.Builder): Unit = originalOwner
+      .members()
+      .asScala
+      .filterNot(_.getId() == originalDataMember.getId())
+      .foreach { member =>
+        toStruct.addMember(
+          member.getMemberName(),
+          member.getTarget(),
+          _.traits(member.getIntroducedTraits().values()),
         )
       }
-      unionBuilder.build()
-    }
 
-    newShapes.foreach { u =>
-      val original = m.expectShape(u.getId())
-      mb.removeShape(original.getId())
-      mb.addShape(u)
+    addNonDataMembers(builder)
 
-      val opReferences = NeighborProvider
-        .reverse(m)
-        .getNeighbors(original)
-        .asScala
-        .map(_.getShape().asOperationShape())
-        .flatMap(optionalToOption(_))
+    builder.build()
+  }
 
-      opReferences.foreach { op =>
-        if (op.getInputShape() == original.getId()) {
-          val wrapper = makeRpcPayloadWrapper(op, u.getId(), "Input")
-          mb.addShape(wrapper)
-          mb.addShape(op.toBuilder().input(wrapper.getId()).build())
-        }
+  // If the union is now attempting to become an operation input/output, we need to wrap it in a payload wrapper struct.
+  private def updateOperations(u: UnionShape, mb: Model.Builder, sourceModel: Model): Unit = {
+    val original = sourceModel.expectShape(u.getId())
 
-        if (op.getOutputShape() == original.getId()) {
-          val wrapper = makeRpcPayloadWrapper(op, u.getId(), "Output")
-          mb.addShape(wrapper)
-          mb.addShape(op.toBuilder().output(wrapper.getId()).build())
-        }
+    val opReferences = NeighborProvider
+      .reverse(sourceModel)
+      .getNeighbors(original)
+      .asScala
+      .map(_.getShape().asOperationShape())
+      .flatMap(optionalToOption(_))
+
+    opReferences.foreach { op =>
+      if (op.getInputShape() == original.getId()) {
+        val wrapper = makeRpcPayloadWrapper(op, u.getId(), "Input")
+        mb.addShape(wrapper)
+        mb.addShape(op.toBuilder().input(wrapper.getId()).build())
+      }
+
+      if (op.getOutputShape() == original.getId()) {
+        val wrapper = makeRpcPayloadWrapper(op, u.getId(), "Output")
+        mb.addShape(wrapper)
+        mb.addShape(op.toBuilder().output(wrapper.getId()).build())
       }
     }
-
-    val transformed = mb.build()
-
-    // for debugging modified smithy
-    val debug = false
-    if (debug) {
-      Files.createDirectories(Paths.get("smithyoutput"))
-      SmithyIdlModelSerializer
-        .builder()
-        .basePath(Paths.get("smithyoutput"))
-        .build()
-        .serialize(transformed)
-        .asScala
-        .foreach { case (k, v) => Files.writeString(k, v) }
-    }
-
-    transformed
-
   }
 
   private def makeRpcPayloadWrapper(op: OperationShape, wraps: ShapeId, suffix: String)
