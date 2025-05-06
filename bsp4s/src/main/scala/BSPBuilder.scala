@@ -1,15 +1,15 @@
 import bsp.traits.JsonNotification
 
 import bsp.traits.JsonRequest
-import cats.effect.IO
 import jsonrpclib.Codec
 import jsonrpclib.Endpoint
-import jsonrpclib.fs2.*
 import smithy4s.Service
+import cats.syntax.all.*
+import jsonrpclib.Monadic
 
-final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _]] private (
+final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _], F[_]] private (
   private val service: Service.Aux[Alg, Op],
-  private val endpoints: Vector[BSPBuilder.BSPEndpoint],
+  private val endpoints: Vector[BSPBuilder.BSPEndpoint[F]],
 ) {
   type Op_[I, O, E, S, F] = Op[I, O, E, S, F]
 
@@ -17,8 +17,8 @@ final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _]] private (
   def withHandler[Oppy[_, _, _, _, _], I, O](
     op: smithy4s.Endpoint[Oppy, I, ?, O, ?, ?]
   )(
-    f: I => IO[O]
-  ): BSPBuilder[Alg, Op_] = copy(
+    f: I => F[O]
+  ): BSPBuilder[Alg, Op_, F] = copy(
     service,
     endpoints =
       endpoints :+ new BSPBuilder.BSPEndpoint {
@@ -27,13 +27,15 @@ final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _]] private (
         type Out = O
 
         def endpoint: smithy4s.Endpoint[Oppy, I, ?, O, ?, ?] = op
-        def impl(in: I): IO[Out] = f(in)
+        def impl(in: I): F[Out] = f(in)
       },
   )
 
-  def bind(chan: FS2Channel[IO]): fs2.Stream[IO, FS2Channel[IO]] = {
+  def build(
+    using Monadic[F]
+  ): Vector[Endpoint[F]] = {
 
-    def handle[Op[_, _, _, _, _], I, O](e: BSPBuilder.BSPEndpoint.Aux[Op, I, O]) = {
+    def handle[Op[_, _, _, _, _], I, O](e: BSPBuilder.BSPEndpoint.Aux[Op, F, I, O]) = {
       given Codec[I] = BSPCodecs.codecFor[I](
         using e.endpoint.input
       )
@@ -50,30 +52,38 @@ final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _]] private (
       }
     }
 
-    chan.withEndpointsStream(endpoints.map(handle(_)))
+    endpoints.map(handle(_))
+  }
+
+  extension [F[_], A](fa: F[A]) {
+
+    private def void(
+      using F: Monadic[F]
+    ): F[Unit] = F.doFlatMap(fa)(_ => F.doPure(()))
+
   }
 
 }
 
 object BSPBuilder {
 
-  def create[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _]](
+  def create[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _], F[_]](
     service: Service.Aux[Alg, Op]
-  ): BSPBuilder[Alg, Op] = new BSPBuilder(service, Vector.empty)
+  ): BSPBuilder[Alg, Op, F] = new BSPBuilder(service, Vector.empty)
 
-  trait BSPEndpoint {
+  trait BSPEndpoint[F[_]] {
     type Op[_, _, _, _, _]
     type In
     type Out
 
     def endpoint: smithy4s.Endpoint[Op, In, ?, Out, ?, ?]
-    def impl(in: In): IO[Out]
+    def impl(in: In): F[Out]
   }
 
   object BSPEndpoint {
 
-    type Aux[Op_[_, _, _, _, _], In_, Out_] =
-      BSPEndpoint {
+    type Aux[Op_[_, _, _, _, _], F[_], In_, Out_] =
+      BSPEndpoint[F] {
         type Op[I, O, E, S, F] = Op_[I, O, E, S, F]
         type In = In_
         type Out = Out_

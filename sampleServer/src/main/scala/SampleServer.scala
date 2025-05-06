@@ -13,6 +13,7 @@ import fs2.io.file.Path
 import jsonrpclib.CallId
 import jsonrpclib.Codec
 import jsonrpclib.fs2.CancelTemplate
+import jsonrpclib.fs2.catsMonadic
 import jsonrpclib.fs2.FS2Channel
 import jsonrpclib.fs2.lsp
 import bsp.BuildServerOperation.WorkspaceBuildTargets
@@ -206,7 +207,7 @@ object SampleServer extends IOApp.Simple {
     )
 
     FS2Channel[IO](cancelTemplate = Some(cancelEndpoint))
-      .flatMap(impl.bind)
+      .flatMap(_.withEndpointsStream(impl.build))
       .flatMap(channel =>
         fs2
           .Stream

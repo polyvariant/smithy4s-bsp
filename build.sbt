@@ -13,7 +13,6 @@ lazy val transformation = project
   )
 
 lazy val codegen = project
-  // .enablePlugins(ScalaNativePlugin)
   .settings(
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
@@ -31,6 +30,22 @@ lazy val codegen = project
   )
   .enablePlugins(Smithy4sCodegenPlugin)
 
+lazy val bsp4s = project
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect-kernel" % "3.6.1",
+      "tech.neander" %%% "jsonrpclib-core" % "0.0.7",
+      "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
+      "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
+    ),
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-Wunused:all",
+      "-Xkind-projector",
+    ),
+  )
+  .dependsOn(codegen)
+
 lazy val sampleServer = project
   .settings(
     libraryDependencies ++= Seq(
@@ -46,8 +61,7 @@ lazy val sampleServer = project
     ),
     name := "sample-server",
   )
-  .dependsOn(codegen)
-// .enablePlugins(ScalaNativePlugin)
+  .dependsOn(bsp4s)
 
 lazy val root = project
   .in(file("."))
