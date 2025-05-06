@@ -5,6 +5,8 @@ import software.amazon.smithy.model.transform.ModelTransformer
 import weaver.*
 import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.loader.ModelAssembler
+import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
+import java.nio.file.Paths
 
 object TransformBuildTargetDataTest extends FunSuite {
   test("Sample transformation of data") {
@@ -29,6 +31,18 @@ object TransformBuildTargetDataTest extends FunSuite {
         .getDiffEvents()
         .asScala
         .toList
+
+    if (diff.nonEmpty) {
+      val tmp = os.temp(
+        SmithyIdlModelSerializer
+          .builder()
+          .build()
+          .serialize(result)
+          .get(Paths.get("sample.smithy")),
+        suffix = "sample.smithy",
+      )
+      println(s"wrote to $tmp")
+    }
 
     assert(diff.isEmpty, diff.map(_.toString()).mkString("\n"))
   }
