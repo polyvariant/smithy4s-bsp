@@ -11,7 +11,7 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("jsonrpclib-smithy4s")),
 )
 ThisBuild / scalaVersion := "3.3.5"
-ThisBuild / tlJdkRelease := Some(17)
+ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
