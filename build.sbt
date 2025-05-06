@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "3.6.4"
+ThisBuild / scalaVersion := "3.3.5"
 ThisBuild / organization := "com.kubukoz.smithy4s-bsp"
 
 lazy val transformation = project

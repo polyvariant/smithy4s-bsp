@@ -2,7 +2,7 @@
     "version" : "1.0",
     "sources" : [
         "codegen/src/main/smithy",
-        "codegen/target/scala-3.6.4/src_managed/main/smithy"
+        "codegen/target/scala-3.3.5/src_managed/main/smithy"
     ],
     "maven" : {
         "dependencies" : [
