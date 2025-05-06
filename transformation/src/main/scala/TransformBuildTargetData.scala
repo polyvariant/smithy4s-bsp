@@ -35,79 +35,29 @@ class TransformBuildTargetData extends ProjectionTransformer {
   def transform(context: TransformContext): Model = {
     val m = context.getModel()
 
-    ServiceLoader.load(classOf[TraitService]).asScala.foreach(println)
-
     // BuildTargetData -> Set(ScalaBuildTarget, CppBuildTarget, ...)
     val mapping = makeDataKindMapping(m)
 
     val mb = Model.builder().addShapes(m.shapes().toList())
 
+    // All references to the shapes in the mapping keys/
     // BuildTarget$data -> BuildTargetData
     val references =
-      mapping.flatMap { case (dataType, _) =>
-        val np = NeighborProvider
-          .reverse(m)
-
-        np
-          .getNeighbors(m.expectShape(dataType))
-          .asScala
-          .map(_.getShape().asMemberShape().get())
-      }.toSet
+      mapping
+        .keySet
+        .flatMap { dataType =>
+          NeighborProvider
+            .reverse(m)
+            .getNeighbors(m.expectShape(dataType))
+            .asScala
+            // we know for a fact these are members... for now. Usually even named `data`.
+            .map(_.getShape().asMemberShape().get())
+        }
+        .toSet
 
     val dataUnions = references.map { baseDataMember =>
-      // baseDataMember: e.g. BuildTarget$data.
-
-      // parent: e.g. BuildTarget. It is a struct,
-      // it needs to become a union of N shapes.
-      // N is equal to the size of mapping(target.getId()).
-      val parent = m.expectShape(baseDataMember.getId().withoutMember()).asStructureShape().get()
-
-      // target: e.g. BuildTargetData. It's a document.
-      // this shape effectively disappears from the model.
-      val target = m.expectShape(baseDataMember.getTarget()).asDocumentShape().get()
-
-      val targetRefs = mapping(target.getId())
-
-      val mixinForMembers = makeMixinForMembers(
-        originalOwner = parent,
-        originalDataMember = baseDataMember,
-      )
-
-      mb.addShape(mixinForMembers)
-
-      val unionBuilder = UnionShape
-        .builder()
-        .id(parent.getId())
-
-      unionBuilder
-        .addTrait(
-          new DiscriminatedUnionTrait("dataKind")
-        )
-
-      val unionTargets = targetRefs.map { targetRef =>
-        makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
-          .foreach(mb.addShape)
-
-        val dataKind = targetRef.expectTrait(classOf[DataKindTrait]).getKind()
-
-        unionBuilder.addMember(
-          // escaping, the smithy model doesn't like hyphens in member names
-          dataKind.replace("-", "_"),
-          // at this point this won't be the same shape as targetRef
-          // but the ID is the same.
-          targetRef.getId(),
-          _.addTrait(
-            new JsonNameTrait(dataKind)
-          ),
-        )
-      }
-
-      unionBuilder.build()
+      transformRef(baseDataMember, mapping(baseDataMember.getTarget()), mb, m)
     }
-
-    dataUnions.foreach(mb.addShape(_))
-
-    dataUnions.foreach(updateOperations(_, mb, m))
 
     val transformed = mb.build()
 
@@ -116,34 +66,65 @@ class TransformBuildTargetData extends ProjectionTransformer {
     transformed
   }
 
-  private case class UnionTarget(
-    newStruct: Shape,
-    newDataStruct: Shape,
-  )
+  // Handle an individual reference to a data member.
+  // For example,
+  // baseDataMember: BuildTarget$data (the member targets the shape BuildTargetData)
+  // targetRefs: ScalaBuildTarget, CppBuildTarget.
+  private def transformRef(
+    baseDataMember: MemberShape,
+    targetRefs: Set[Shape],
+    mb: Model.Builder,
+    m: Model,
+  ): Unit = {
+    // baseDataMember: e.g. BuildTarget$data.
 
-  // Copies all the members of targetRef into a new structure shape
-  // renamed with a Data suffix to avoid conflicting with the enclosing struct.
-  // Used to copy `ScalaBuildTarget` into `ScalaBuildTargetData`.
-  private def makeDataStruct(targetRef: Shape): StructureShape = {
-    val builder = StructureShape
+    // parent: e.g. BuildTarget. It is a struct,
+    // it needs to become a union of N shapes.
+    // N is equal to the size of mapping(target.getId()).
+    val parent = m.expectShape(baseDataMember.getId().withoutMember()).asStructureShape().get()
+
+    // target: e.g. BuildTargetData. It's a document.
+    // this shape effectively disappears from the model.
+    val target = m.expectShape(baseDataMember.getTarget()).asDocumentShape().get()
+
+    val mixinForMembers = makeMixinForMembers(
+      originalOwner = parent,
+      originalDataMember = baseDataMember,
+    )
+
+    mb.addShape(mixinForMembers)
+
+    val unionBuilder = UnionShape
       .builder()
-      .id(
-        ShapeId
-          .fromParts(targetRef.getId().getNamespace(), targetRef.getId().getName() + "Data")
+      .id(parent.getId())
+
+    unionBuilder
+      .addTrait(
+        new DiscriminatedUnionTrait("dataKind")
       )
 
-    targetRef
-      .members()
-      .asScala
-      .foreach { m =>
-        builder.addMember(
-          m.getMemberName(),
-          m.getTarget(),
-          _.addTraits(m.getIntroducedTraits().values()),
-        )
-      }
+    val unionTargets = targetRefs.map { targetRef =>
+      makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
+        .foreach(mb.addShape)
 
-    builder.build()
+      val dataKind = expectDataKind(targetRef).getKind()
+
+      unionBuilder.addMember(
+        // escaping, the smithy model doesn't like hyphens in member names
+        dataKind.replace("-", "_"),
+        // at this point this won't be the same shape as targetRef
+        // but the ID is the same.
+        targetRef.getId(),
+        _.addTrait(
+          new JsonNameTrait(dataKind)
+        ),
+      )
+    }
+
+    val u = unionBuilder.build()
+    mb.addShape(u)
+
+    updateOperations(u, mb, m)
   }
 
   // Creates a new structure shape that will become a target of the new union. For example, ScalaBuildTarget.
@@ -186,19 +167,29 @@ class TransformBuildTargetData extends ProjectionTransformer {
     )
   }
 
-  // for debugging modified smithy
-  private def dump(m: Model): Unit = {
-    val debug = false
-    if (debug) {
-      Files.createDirectories(Paths.get("smithyoutput"))
-      SmithyIdlModelSerializer
-        .builder()
-        .basePath(Paths.get("smithyoutput"))
-        .build()
-        .serialize(m)
-        .asScala
-        .foreach { case (k, v) => Files.writeString(k, v) }
-    }
+  // Copies all the members of targetRef into a new structure shape
+  // renamed with a Data suffix to avoid conflicting with the enclosing struct.
+  // Used to copy `ScalaBuildTarget` into `ScalaBuildTargetData`.
+  private def makeDataStruct(targetRef: Shape): StructureShape = {
+    val builder = StructureShape
+      .builder()
+      .id(
+        ShapeId
+          .fromParts(targetRef.getId().getNamespace(), targetRef.getId().getName() + "Data")
+      )
+
+    targetRef
+      .members()
+      .asScala
+      .foreach { m =>
+        builder.addMember(
+          m.getMemberName(),
+          m.getTarget(),
+          _.addTraits(m.getIntroducedTraits().values()),
+        )
+      }
+
+    builder.build()
   }
 
   // Creates a mapping of each shape marked with DataKind, to shapes that extend that kind.
@@ -207,23 +198,11 @@ class TransformBuildTargetData extends ProjectionTransformer {
       .getShapesWithTrait(DataKindTrait.ID)
       .asScala
       .flatMap { dataKindImpl =>
-        // a bit of a hacky way to do: dataKindImpl.expectTrait(classOf[DataKindTrait])
-        val b = Shape.shapeToBuilder(dataKindImpl): AbstractShapeBuilder[_, _]
-
-        b.addTrait(
-          new DataKindTrait.Provider().createTrait(
-            DataKindTrait.ID,
-            dataKindImpl.getAllTraits().asScala(DataKindTrait.ID).toNode(),
-          )
-        )
-
-        val updatedKind = b.build()
-        updatedKind
-          .expectTrait(classOf[DataKindTrait])
+        expectDataKind(dataKindImpl)
           .getPolymorphicData()
           .asScala
           .toList
-          .map(_ -> updatedKind)
+          .map(_ -> dataKindImpl)
       }
       .groupBy(_._1)
       .map { case (k, vs) => (k, vs.map(_._2).toSet) }
@@ -288,6 +267,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
     }
   }
 
+  // wraps the given operation's input/output in a single-field structure shape with @rpcPayload.
   private def makeRpcPayloadWrapper(op: OperationShape, wraps: ShapeId, suffix: String)
     : StructureShape = StructureShape
     .builder()
@@ -310,5 +290,31 @@ class TransformBuildTargetData extends ProjectionTransformer {
       Some(o.get())
     else
       None
+
+  private def expectDataKind(s: Shape): DataKindTrait = {
+    val trt = Option(
+      s.getAllTraits().get(DataKindTrait.ID)
+    ).getOrElse(sys.error(s"Expected $s to have a DataKind trait, but it doesn't"))
+
+    new DataKindTrait.Provider().createTrait(
+      trt.toShapeId(),
+      trt.toNode(),
+    )
+  }
+
+  // for debugging modified smithy
+  private def dump(m: Model): Unit = {
+    val debug = false
+    if (debug) {
+      Files.createDirectories(Paths.get("smithyoutput"))
+      SmithyIdlModelSerializer
+        .builder()
+        .basePath(Paths.get("smithyoutput"))
+        .build()
+        .serialize(m)
+        .asScala
+        .foreach { case (k, v) => Files.writeString(k, v) }
+    }
+  }
 
 }
