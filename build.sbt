@@ -7,12 +7,13 @@ ThisBuild / developers := List(tlGitHubDev("kubukoz", "Jakub Kozłowski"))
 ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatype01
 
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
-  RefPredicate.Equals(Ref.Branch("main")),
-  RefPredicate.Equals(Ref.Branch("jsonrpclib-smithy4s")),
+  RefPredicate.Equals(Ref.Branch("main"))
 )
+
 ThisBuild / scalaVersion := "3.3.5"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
+ThisBuild / tlCiDependencyGraphJob := false
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 val commonSettings = Seq(
