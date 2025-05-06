@@ -27,17 +27,12 @@ import java.nio.file.Paths
 object TransformBuildTargetDataTest extends FunSuite {
   test("Sample transformation of data") {
 
-    val result = {
-      val base = new TransformBuildTargetData().transform(
-        TransformContext
-          .builder()
-          .model(loadModel(os.sub / "smithy" / "sampleDataTraits" / "input.smithy"))
-          .build()
-      )
-
-      // don't do this at home, temp workaround
-      Model.assembler().addModel(base).assemble().unwrap()
-    }
+    val result = new TransformBuildTargetData().transform(
+      TransformContext
+        .builder()
+        .model(loadModel(os.sub / "smithy" / "sampleDataTraits" / "input.smithy"))
+        .build()
+    )
 
     val expected = loadModel(
       os.sub / "smithy" / "sampleDataTraits" / "expected.smithy"

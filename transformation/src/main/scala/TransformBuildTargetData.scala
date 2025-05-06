@@ -62,12 +62,11 @@ class TransformBuildTargetData extends ProjectionTransformer {
         .toSet
 
     val mb = m.toBuilder()
+    mapping.keySet.foreach(mb.removeShape)
 
     references.foreach { baseDataMember =>
       transformRef(baseDataMember, mapping(baseDataMember.getTarget()), mb, m)
     }
-
-    mapping.keySet.foreach(mb.removeShape)
 
     val transformed = mb.build()
 
@@ -100,6 +99,9 @@ class TransformBuildTargetData extends ProjectionTransformer {
 
     mb.addShape(mixinForMembers)
 
+    // need to remove this shape so that its leftover members also disappear
+    mb.removeShape(parent.getId())
+
     val unionBuilder = UnionShape
       .builder()
       .id(parent.getId())
@@ -110,6 +112,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
       )
 
     targetRefs.toList.sorted.foreach { targetRef =>
+      mb.removeShape(targetRef.getId())
       makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
         .foreach(mb.addShape)
 
