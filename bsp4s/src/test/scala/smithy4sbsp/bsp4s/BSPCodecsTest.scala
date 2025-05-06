@@ -52,6 +52,8 @@ import smithy4s.schema.Schema
 import BuildTargetTest.BuildTargetTestInput
 import bsp.TestParams
 import bsp.scala_.ScalaTestParams
+import bsp.jvm.JvmBuildTargetData
+import scala.annotation.nowarn
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
@@ -141,6 +143,13 @@ object BSPCodecsTest extends FunSuite {
     )
 
     roundtripTest(input, expected)
+  }
+
+  // compilation test
+  @nowarn("msg=unused")
+  def sanityCheck(t: ScalaBuildTarget): Unit = {
+    val bt: JvmBuildTargetData = t.data.get.jvmBuildTarget.get
+    val jvm: Option[String] = bt.javaVersion
   }
 
   private def roundtripTest[A: Schema](
