@@ -15,7 +15,6 @@ ThisBuild / scalaVersion := "3.3.5"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
 ThisBuild / tlCiDependencyGraphJob := false
-ThisBuild / sonatypeProfileName := "org.polyvariant"
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 val commonSettings = Seq(
@@ -99,4 +98,7 @@ lazy val sampleServer = project
 lazy val root = project
   .in(file("."))
   .aggregate(bsp4s, sampleServer, codegen, transformation)
+  .settings(
+    sonatypeProfileName := "org.polyvariant"
+  )
   .enablePlugins(NoPublishPlugin)
