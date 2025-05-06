@@ -7,6 +7,7 @@ ThisBuild / developers := List( /* tlGitHubDev() */ )
 ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatypeLegacy
 
 ThisBuild / scalaVersion := "3.3.5"
+ThisBuild / tlJdkRelease := Some(11)
 ThisBuild / tlFatalWarnings := false
 
 val commonSettings = Seq(
