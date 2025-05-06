@@ -88,7 +88,7 @@ object BSPCodecsTest extends FunSuite {
             ),
             displayName = Some("jk-hello"),
             baseDirectory = Some(
-              URI(Paths.get("./").toAbsolutePath().toUri().toString())
+              URI(Paths.get("/foo/bar").toUri().toString())
             ),
             data = Some(
               ScalaBuildTargetData(
@@ -126,7 +126,7 @@ object BSPCodecsTest extends FunSuite {
             "uri" -> Document.fromString("proj://hello")
           ),
           "baseDirectory" -> Document.fromString(
-            "file:///Users/kubukoz/projects/smithy4s-bsp/./"
+            "file:///foo/bar"
           ),
           "dependencies" -> Document.array(),
           "displayName" -> Document.fromString("jk-hello"),
