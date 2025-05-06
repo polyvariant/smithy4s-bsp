@@ -29,6 +29,12 @@ import smithy4s.schema.Schema
 import util.chaining.*
 import smithy4sbsp.meta.RpcPayload
 import smithy4s.schema.Schema.StructSchema
+import smithy4s.Service
+import jsonrpclib.smithy4sinterop.ClientStub
+import jsonrpclib.fs2.FS2Channel
+import cats.effect.kernel.Async
+import smithy4s.Endpoint
+import smithy4s.schema.OperationSchema
 
 object BSPCodecs {
 
@@ -52,6 +58,27 @@ object BSPCodecs {
 
       def encode(a: A): Payload = Payload.Data(encoder.encode(a).toArrayUnsafe)
     }
+
+  def clientStub[Alg[_[_, _, _, _, _]], F[_]: Async](service: Service[Alg], chan: FS2Channel[F])
+    : F[service.Impl[F]] = ClientStub(bspServiceTransformations(service), chan)
+
+  // todo: probably should be private
+  def bspServiceTransformations[Alg[_[_, _, _, _, _]]]: Service[Alg] => Service[Alg] =
+    _.toBuilder
+      .mapEndpointEach(
+        Endpoint.mapSchema(
+          OperationSchema
+            .mapInputK(
+              Schema.transformTransitivelyK(bspTransformations)
+            )
+            .andThen(
+              OperationSchema.mapOutputK(
+                Schema.transformTransitivelyK(bspTransformations)
+              )
+            )
+        )
+      )
+      .build
 
   private def bspTransformations: Schema ~> Schema =
     new (Schema ~> Schema) {

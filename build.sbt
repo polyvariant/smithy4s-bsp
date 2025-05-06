@@ -25,6 +25,7 @@ lazy val transformation = project
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.57.1",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
+      "tech.neander" % "jsonrpclib-smithy" % "0.0.7+18-0e7dd223+20250506-0324-SNAPSHOT",
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",
     ),
     publish / skip := true,
@@ -36,6 +37,7 @@ lazy val codegen = project
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
+      "tech.neander" % "jsonrpclib-smithy" % "0.0.7+18-0e7dd223+20250506-0324-SNAPSHOT" % Smithy4s,
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
     Compile / smithy4sModelTransformers := List(
@@ -43,6 +45,7 @@ lazy val codegen = project
       "set-shapes",
       "open-enums",
       "transform-build-target-data",
+      "transform-jsonrpclib-traits",
       "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
@@ -54,7 +57,7 @@ lazy val bsp4s = project
     commonSettings,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect-kernel" % "3.6.1",
-      "tech.neander" %%% "jsonrpclib-core" % "0.0.7",
+      "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.7+18-0e7dd223-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
@@ -65,7 +68,7 @@ lazy val sampleServer = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7",
+      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7+18-0e7dd223-SNAPSHOT",
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,

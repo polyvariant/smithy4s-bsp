@@ -2,4 +2,5 @@ UntaggedUnions
 SetShapes
 OpenEnums
 TransformBuildTargetData
+TransformJsonRpcTraits
 RenameScalaNamespace

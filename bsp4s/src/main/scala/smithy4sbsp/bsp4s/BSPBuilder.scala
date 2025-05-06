@@ -16,14 +16,13 @@
 
 package smithy4sbsp.bsp4s
 
-import bsp.traits.JsonNotification
-
-import bsp.traits.JsonRequest
 import jsonrpclib.Codec
 import jsonrpclib.Endpoint
 import smithy4s.Service
 import cats.syntax.all.*
 import jsonrpclib.Monadic
+import jsonrpclib.JsonRequest
+import jsonrpclib.JsonNotification
 
 final case class BSPBuilder[Alg[_[_, _, _, _, _]], Op[_, _, _, _, _], F[_]] private (
   private val service: Service.Aux[Alg, Op],
