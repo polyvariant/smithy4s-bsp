@@ -35,7 +35,6 @@ import software.amazon.smithy.model.traits.RequiredTrait
 
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.stream.Collectors
 import scala.collection.JavaConverters.*
 
 class TransformBuildTargetData extends ProjectionTransformer {
@@ -62,11 +61,13 @@ class TransformBuildTargetData extends ProjectionTransformer {
         }
         .toSet
 
-    val mb = Model.builder().addShapes(m.shapes().collect(Collectors.toList()))
+    val mb = m.toBuilder()
 
     references.foreach { baseDataMember =>
       transformRef(baseDataMember, mapping(baseDataMember.getTarget()), mb, m)
     }
+
+    mapping.keySet.foreach(mb.removeShape)
 
     val transformed = mb.build()
 
@@ -108,7 +109,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         new DiscriminatedUnionTrait("dataKind")
       )
 
-    targetRefs.foreach { targetRef =>
+    targetRefs.toList.sorted.foreach { targetRef =>
       makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
         .foreach(mb.addShape)
 
