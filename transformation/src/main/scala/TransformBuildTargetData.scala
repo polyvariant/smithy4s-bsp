@@ -5,14 +5,10 @@ import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.neighbor.NeighborProvider
 import software.amazon.smithy.model.node.Node
-import software.amazon.smithy.model.node.NodeVisitor
-import software.amazon.smithy.model.node.ToNode
-import software.amazon.smithy.model.shapes.AbstractShapeBuilder
 import software.amazon.smithy.model.shapes.MemberShape
 import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.ShapeId
-import software.amazon.smithy.model.shapes.ShapeType
 import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
@@ -20,14 +16,11 @@ import software.amazon.smithy.model.traits.DynamicTrait
 import software.amazon.smithy.model.traits.JsonNameTrait
 import software.amazon.smithy.model.traits.MixinTrait
 import software.amazon.smithy.model.traits.RequiredTrait
-import software.amazon.smithy.model.traits.TraitService
-import software.amazon.smithy.model.transform.ModelTransformer
 
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.ServiceLoader
 import java.util.stream.Collectors
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -53,9 +46,9 @@ class TransformBuildTargetData extends ProjectionTransformer {
         }
         .toSet
 
-    val mb = Model.builder().addShapes(m.shapes().toList())
+    val mb = Model.builder().addShapes(m.shapes().collect(Collectors.toList()))
 
-    val dataUnions = references.map { baseDataMember =>
+    references.foreach { baseDataMember =>
       transformRef(baseDataMember, mapping(baseDataMember.getTarget()), mb, m)
     }
 
@@ -83,10 +76,6 @@ class TransformBuildTargetData extends ProjectionTransformer {
     // N is equal to the size of mapping(target.getId()).
     val parent = m.expectShape(baseDataMember.getId().withoutMember()).asStructureShape().get()
 
-    // target: e.g. BuildTargetData. It's a document.
-    // this shape effectively disappears from the model.
-    val target = m.expectShape(baseDataMember.getTarget()).asDocumentShape().get()
-
     val mixinForMembers = makeMixinForMembers(
       originalOwner = parent,
       originalDataMember = baseDataMember,
@@ -103,7 +92,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         new DiscriminatedUnionTrait("dataKind")
       )
 
-    val unionTargets = targetRefs.map { targetRef =>
+    targetRefs.foreach { targetRef =>
       makeNewUnionTarget(targetRef, List(mixinForMembers), baseDataMember)
         .foreach(mb.addShape)
 
@@ -313,7 +302,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         .build()
         .serialize(m)
         .asScala
-        .foreach { case (k, v) => Files.writeString(k, v) }
+        .foreach { case (k, v) => Files.write(k, v.getBytes()) }
     }
   }
 

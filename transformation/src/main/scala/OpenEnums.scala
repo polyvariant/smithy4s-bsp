@@ -1,19 +1,15 @@
-import software.amazon.smithy.build.ProjectionTransformer
-
-import software.amazon.smithy.build.TransformContext
-import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.transform.ModelTransformer
-import scala.collection.JavaConverters._
-import java.util.stream.Collectors
-import software.amazon.smithy.model.shapes.ShapeId
-import alloy.UntaggedUnionTrait
-import software.amazon.smithy.model.traits.UniqueItemsTrait
-import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.shapes.AbstractShapeBuilder
+import alloy.OpenEnumTrait
 import bsp.traits.EnumKindTrait
 import bsp.traits.EnumKindTrait.EnumKind.CLOSED
 import bsp.traits.EnumKindTrait.EnumKind.OPEN
-import alloy.OpenEnumTrait
+import software.amazon.smithy.build.ProjectionTransformer
+import software.amazon.smithy.build.TransformContext
+import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.shapes.AbstractShapeBuilder
+import software.amazon.smithy.model.shapes.Shape
+import software.amazon.smithy.model.transform.ModelTransformer
+
+import scala.collection.JavaConverters.*
 
 class OpenEnums extends ProjectionTransformer {
   def getName(): String = "open-enums"

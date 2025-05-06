@@ -1,11 +1,10 @@
 import software.amazon.smithy.build.ProjectionTransformer
-
 import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.transform.ModelTransformer
-import scala.collection.JavaConverters._
-import java.util.stream.Collectors
 import software.amazon.smithy.model.shapes.ShapeId
+import software.amazon.smithy.model.transform.ModelTransformer
+
+import scala.collection.JavaConverters.*
 
 class RenameScalaNamespace extends ProjectionTransformer {
   def getName(): String = "rename-scala-namespace"

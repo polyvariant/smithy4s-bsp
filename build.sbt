@@ -1,5 +1,22 @@
+ThisBuild / tlBaseVersion := "0.1"
+ThisBuild / organization := "org.polyvariant.smithy4s-bsp"
+ThisBuild / organizationName := "Polyvariant"
+ThisBuild / startYear := Some(2025)
+ThisBuild / licenses := Seq(License.Apache2)
+ThisBuild / developers := List( /* tlGitHubDev() */ )
+ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatypeLegacy
+
 ThisBuild / scalaVersion := "3.3.5"
-ThisBuild / organization := "com.kubukoz.smithy4s-bsp"
+ThisBuild / tlFatalWarnings := false
+
+val commonSettings = Seq(
+  scalacOptions -= "-Ykind-projector:underscores",
+  scalacOptions ++= Seq(
+    "-Ykind-projector",
+    "-deprecation",
+    "-Wunused:all",
+  ),
+)
 
 lazy val transformation = project
   .settings(
@@ -14,6 +31,7 @@ lazy val transformation = project
 
 lazy val codegen = project
   .settings(
+    commonSettings,
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
@@ -32,32 +50,24 @@ lazy val codegen = project
 
 lazy val bsp4s = project
   .settings(
+    commonSettings,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect-kernel" % "3.6.1",
       "tech.neander" %%% "jsonrpclib-core" % "0.0.7",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-Wunused:all",
-      "-Xkind-projector",
-    ),
   )
   .dependsOn(codegen)
 
 lazy val sampleServer = project
   .settings(
+    commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7",
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
-    ),
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-Wunused:all",
-      "-Xkind-projector",
     ),
     name := "sample-server",
   )
@@ -65,9 +75,5 @@ lazy val sampleServer = project
 
 lazy val root = project
   .in(file("."))
-  .settings(
-    publish / skip := true
-  )
   .aggregate(sampleServer, codegen, transformation)
-
-ThisBuild / doc / sources := Nil
+  .enablePlugins(NoPublishPlugin)
