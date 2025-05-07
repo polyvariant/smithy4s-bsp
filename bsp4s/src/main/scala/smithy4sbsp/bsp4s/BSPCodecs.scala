@@ -31,12 +31,28 @@ import smithy4sbsp.meta.RpcPayload
 import smithy4s.schema.Schema.StructSchema
 import smithy4s.Service
 import jsonrpclib.smithy4sinterop.ClientStub
-import jsonrpclib.fs2.FS2Channel
-import cats.effect.kernel.Async
 import smithy4s.Endpoint
 import smithy4s.schema.OperationSchema
+import jsonrpclib.Monadic
+import jsonrpclib.Channel
+import jsonrpclib.smithy4sinterop.ServerEndpoints
+import smithy4s.kinds.FunctorAlgebra
 
 object BSPCodecs {
+
+  def clientStub[Alg[_[_, _, _, _, _]], F[_]: Monadic](
+    service: Service[Alg],
+    chan: Channel[F],
+  ): service.Impl[F] = ClientStub(bspServiceTransformations(service), chan)
+
+  def serverEndpoints[Alg[_[_, _, _, _, _]], F[_]: Monadic](
+    impl: FunctorAlgebra[Alg, F]
+  )(
+    using service: Service[Alg]
+  ): List[jsonrpclib.Endpoint[F]] =
+    ServerEndpoints[Alg, F](impl)(
+      using bspServiceTransformations(service)
+    )
 
   def codecFor[A: Schema]: Codec[A] =
     new {
@@ -59,11 +75,7 @@ object BSPCodecs {
       def encode(a: A): Payload = Payload.Data(encoder.encode(a).toArrayUnsafe)
     }
 
-  def clientStub[Alg[_[_, _, _, _, _]], F[_]: Async](service: Service[Alg], chan: FS2Channel[F])
-    : F[service.Impl[F]] = ClientStub(bspServiceTransformations(service), chan)
-
-  // todo: probably should be private
-  def bspServiceTransformations[Alg[_[_, _, _, _, _]]]: Service[Alg] => Service[Alg] =
+  private def bspServiceTransformations[Alg[_[_, _, _, _, _]]]: Service[Alg] => Service[Alg] =
     _.toBuilder
       .mapEndpointEach(
         Endpoint.mapSchema(
@@ -80,7 +92,7 @@ object BSPCodecs {
       )
       .build
 
-  private def bspTransformations: Schema ~> Schema =
+  private val bspTransformations: Schema ~> Schema =
     new (Schema ~> Schema) {
       def apply[A0](fa: Schema[A0]): Schema[A0] =
         fa match {

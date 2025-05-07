@@ -222,7 +222,8 @@ object SampleServer extends IOApp.Simple {
       fs2.Stream(msg + "\n").through(Files[IO].writeUtf8(Path("log.txt"))).compile.drain
     )
 
-    FS2Channel[IO](cancelTemplate = Some(cancelEndpoint))
+    FS2Channel
+      .stream[IO](cancelTemplate = Some(cancelEndpoint))
       .flatMap(_.withEndpointsStream(impl.build))
       .flatMap(channel =>
         fs2
