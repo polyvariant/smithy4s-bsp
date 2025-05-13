@@ -31,27 +31,28 @@ package smithy4sbsp.bsp4s
  * limitations under the License.
  */
 
-import BSPCodecs.codecFor
+import BuildTargetTest.BuildTargetTestInput
 import bsp.BuildTarget
 import bsp.BuildTargetCapabilities
 import bsp.BuildTargetIdentifier
 import bsp.BuildTargetTag
 import bsp.LanguageId
+import bsp.TestParams
 import bsp.URI
 import bsp.WorkspaceBuildTargetsResult
+import bsp.jvm.JvmBuildTarget
 import bsp.scala_.ScalaBuildTarget
 import bsp.scala_.ScalaPlatform
 import cats.effect.IO
-import smithy4s.Document
-import smithy4s.json.Json
+import io.circe.*
+import io.circe.Codec
+import io.circe.literal.*
+import jsonrpclib.Hack
+import smithy4s.schema.Schema
 import weaver.*
 
 import java.nio.file.Paths
-import smithy4s.schema.Schema
-import BuildTargetTest.BuildTargetTestInput
-import bsp.TestParams
 import scala.annotation.nowarn
-import bsp.jvm.JvmBuildTarget
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
@@ -63,10 +64,10 @@ object BSPCodecsTest extends FunSuite {
 
     roundtripTest(
       input,
-      Document.obj(
-        "dataKind" -> Document.fromString("scala-test"),
-        "targets" -> Document.array(),
-      ),
+      json"""{
+        "dataKind": "scala-test",
+        "targets": []
+        }""",
     )
   }
   test("WorkspaceBuildTargetsResult") {
@@ -103,40 +104,33 @@ object BSPCodecsTest extends FunSuite {
       )
     )
 
-    val expected = Document.obj(
-      "targets" -> Document.array(
-        Document.obj(
-          "dataKind" -> Document.fromString("scala"),
-          "tags" -> Document.array(
-            Document.fromString("library")
-          ),
-          "data" -> Document.obj(
-            "jars" -> Document.array(),
-            "scalaBinaryVersion" -> Document.fromString("3.7"),
-            "scalaVersion" -> Document.fromString("3.7.0-RC1"),
-            "platform" -> Document.fromInt(1),
-            "scalaOrganization" -> Document.fromString("org.scala-lang"),
-          ),
-          "languageIds" -> Document.array(
-            Document.fromString("scala")
-          ),
-          "id" -> Document.obj(
-            "uri" -> Document.fromString("proj://hello")
-          ),
-          "baseDirectory" -> Document.fromString(
-            "file:///foo/bar"
-          ),
-          "dependencies" -> Document.array(),
-          "displayName" -> Document.fromString("jk-hello"),
-          "capabilities" -> Document.obj(
-            "canCompile" -> Document.fromBoolean(true),
-            "canTest" -> Document.fromBoolean(true),
-            "canRun" -> Document.fromBoolean(true),
-            "canDebug" -> Document.fromBoolean(true),
-          ),
-        )
-      )
-    )
+    val expected =
+      json"""{
+        "targets": [
+          {
+            "dataKind": "scala",
+            "tags": ["library"],
+            "data": {
+              "jars": [],
+              "scalaBinaryVersion": "3.7",
+              "scalaVersion": "3.7.0-RC1",
+              "platform": 1,
+              "scalaOrganization": "org.scala-lang"
+            },
+            "languageIds": ["scala"],
+            "id": { "uri": "proj://hello" },
+            "baseDirectory": "file:///foo/bar",
+            "dependencies": [],
+            "displayName": "jk-hello",
+            "capabilities": {
+              "canCompile": true,
+              "canTest": true,
+              "canRun": true,
+              "canDebug": true
+            }
+          }
+        ]
+      }"""
 
     roundtripTest(input, expected)
   }
@@ -148,19 +142,23 @@ object BSPCodecsTest extends FunSuite {
     val jvm: Option[String] = bt.javaVersion
   }
 
+  private def codecFor[A: Schema]: Codec[A] = Hack.schemaToCodec[A](
+    using Schema[A].transformTransitivelyK(BSPCodecs.bspTransformations)
+  )
+
   private def roundtripTest[A: Schema](
     a: A,
-    encoded: Document,
+    encoded: Json,
   )(
     using SourceLocation
   ): Expectations = {
     val c = codecFor[A]
 
-    val encoded2 = c.encode(a)
+    val encoded2 = c.apply(a)
 
-    val result = Json.readDocument(encoded2.stripNull.get.array).toTry.get
+    val result = encoded2
 
-    val decoded = c.decode(Some(encoded2))
+    val decoded = c.decodeJson(encoded2)
 
     assert.same(result, encoded) &&
     assert.same(Right(a), decoded)

@@ -1,4 +1,4 @@
-ThisBuild / tlBaseVersion := "0.2"
+ThisBuild / tlBaseVersion := "0.3"
 ThisBuild / organization := "org.polyvariant.smithy4s-bsp"
 ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
@@ -25,6 +25,7 @@ val commonSettings = Seq(
         "-Ykind-projector",
         "-deprecation",
         "-Wunused:all",
+        "-Wnonunit-statement",
       )
     else
       Nil
@@ -41,15 +42,16 @@ lazy val transformation = project
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.57.1",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
-      "tech.neander" % "jsonrpclib-smithy" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" % "jsonrpclib-smithy" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
       "software.amazon.smithy" % "smithy-diff" % "1.57.1" % Test,
     ),
     publish / skip := true,
+    mimaPreviousArtifacts := Set.empty,
+    mimaFailOnNoPrevious := false,
   )
-  .disablePlugins(MimaPlugin)
 
 lazy val codegen = project
   .settings(
@@ -57,7 +59,7 @@ lazy val codegen = project
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
-      "tech.neander" % "jsonrpclib-smithy" % "0.0.7+27-4fdf7547-SNAPSHOT" % Smithy4s,
+      "tech.neander" % "jsonrpclib-smithy" % "0.0.8+29-89c3de6d-SNAPSHOT" % Smithy4s,
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
     Compile / smithy4sModelTransformers := List(
@@ -76,8 +78,9 @@ lazy val bsp4s = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.7+27-4fdf7547-SNAPSHOT",
-      "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
+      "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+29-89c3de6d-SNAPSHOT",
+      "io.circe" %%% "circe-parser" % "0.14.13",
+      "io.circe" %%% "circe-literal" % "0.14.13",
     ),
   )
   .dependsOn(codegen)
@@ -86,15 +89,16 @@ lazy val sampleServer = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "co.fs2" %%% "fs2-io" % "3.12.0",
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
     name := "sample-server",
+    mimaPreviousArtifacts := Set.empty,
+    mimaFailOnNoPrevious := false,
   )
-  .disablePlugins(MimaPlugin)
   .dependsOn(bsp4s)
 
 lazy val root = project

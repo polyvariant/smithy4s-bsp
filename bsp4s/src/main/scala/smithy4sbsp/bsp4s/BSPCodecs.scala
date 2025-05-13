@@ -16,25 +16,18 @@
 
 package smithy4sbsp.bsp4s
 
-import jsonrpclib.Codec
-import jsonrpclib.Payload
-import jsonrpclib.ProtocolError
-import smithy4s.Blob
-import smithy4s.~>
-import smithy4s.json.Json
-import smithy4s.schema.Schema
-
-import util.chaining.*
-import smithy4sbsp.meta.RpcPayload
-import smithy4s.schema.Schema.StructSchema
-import smithy4s.Service
-import jsonrpclib.smithy4sinterop.ClientStub
-import smithy4s.Endpoint
-import smithy4s.schema.OperationSchema
-import jsonrpclib.Monadic
 import jsonrpclib.Channel
+import jsonrpclib.Monadic
+import jsonrpclib.smithy4sinterop.ClientStub
 import jsonrpclib.smithy4sinterop.ServerEndpoints
+import smithy4s.Endpoint
+import smithy4s.Service
 import smithy4s.kinds.FunctorAlgebra
+import smithy4s.schema.OperationSchema
+import smithy4s.schema.Schema
+import smithy4s.schema.Schema.StructSchema
+import smithy4s.~>
+import smithy4sbsp.meta.RpcPayload
 
 object BSPCodecs {
 
@@ -52,29 +45,8 @@ object BSPCodecs {
       using bspServiceTransformations(service)
     )
 
-  def codecFor[A: Schema]: Codec[A] =
-    new {
-      val schema = Schema[A].transformTransitivelyK(bspTransformations)
-
-      private val decoder = Json.payloadCodecs.decoders.fromSchema[A](schema)
-
-      private val encoder = Json.payloadCodecs.encoders.fromSchema[A](schema)
-
-      def decode(payload: Option[Payload]): Either[ProtocolError, A] = payload
-        .flatMap(_.stripNull)
-        .map(_.array)
-        .fold(Blob.empty)(Blob.apply(_))
-        .pipe { blob =>
-          decoder
-            .decode(blob)
-            .left
-            .map(pe => ProtocolError.ParseError(pe.toString()))
-        }
-
-      def encode(a: A): Payload = Payload.Data(encoder.encode(a).toArrayUnsafe)
-    }
-
-  private def bspServiceTransformations[Alg[_[_, _, _, _, _]]]: Service[Alg] => Service[Alg] =
+  private[bsp4s] def bspServiceTransformations[Alg[_[_, _, _, _, _]]]
+    : Service[Alg] => Service[Alg] =
     _.toBuilder
       .mapEndpointEach(
         Endpoint.mapSchema(
@@ -91,7 +63,7 @@ object BSPCodecs {
       )
       .build
 
-  private val bspTransformations: Schema ~> Schema =
+  private[bsp4s] val bspTransformations: Schema ~> Schema =
     new (Schema ~> Schema) {
       def apply[A0](fa: Schema[A0]): Schema[A0] =
         fa match {
