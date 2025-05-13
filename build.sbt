@@ -41,7 +41,7 @@ lazy val transformation = project
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.57.1",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
-      "tech.neander" % "jsonrpclib-smithy" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" % "jsonrpclib-smithy" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
@@ -57,7 +57,7 @@ lazy val codegen = project
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
-      "tech.neander" % "jsonrpclib-smithy" % "0.0.7+27-4fdf7547-SNAPSHOT" % Smithy4s,
+      "tech.neander" % "jsonrpclib-smithy" % "0.0.8+29-89c3de6d-SNAPSHOT" % Smithy4s,
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
     Compile / smithy4sModelTransformers := List(
@@ -76,7 +76,7 @@ lazy val bsp4s = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
     ),
   )
@@ -86,9 +86,9 @@ lazy val sampleServer = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "co.fs2" %%% "fs2-io" % "3.12.0",
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.7+27-4fdf7547-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+29-89c3de6d-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
