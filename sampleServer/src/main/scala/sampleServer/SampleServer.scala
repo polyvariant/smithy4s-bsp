@@ -66,6 +66,7 @@ import bsp.scala_.ScalaPlatform
 import bsp.scala_.ScalaBuildTarget
 import bsp.BuildServerOperation.OnBuildExit
 import smithy4sbsp.bsp4s.BSPBuilder
+import fs2.io.file.Flags
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
@@ -219,7 +220,11 @@ object SampleServer extends IOApp.Simple {
 
   def run: IO[Unit] = {
     val impl = server(msg =>
-      fs2.Stream(msg + "\n").through(Files[IO].writeUtf8(Path("log.txt"))).compile.drain
+      fs2
+        .Stream(msg + "\n")
+        .through(Files[IO].writeUtf8(Path("log.txt"), Flags.Append))
+        .compile
+        .drain
     )
 
     FS2Channel
