@@ -49,6 +49,7 @@ lazy val transformation = project
     ),
     publish / skip := true,
   )
+  .disablePlugins(MimaPlugin)
 
 lazy val codegen = project
   .settings(
@@ -93,6 +94,7 @@ lazy val sampleServer = project
     ),
     name := "sample-server",
   )
+  .disablePlugins(MimaPlugin)
   .dependsOn(bsp4s)
 
 lazy val root = project
