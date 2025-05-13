@@ -73,22 +73,21 @@ object SampleServer extends IOApp.Simple {
   def server(log: String => IO[Unit]) = List.concat(
     BSPCodecs.serverEndpoints(
       new BuildServer.Default[IO](IO.stub) {
-        override def buildInitialize(input: InitializeBuildParams): IO[InitializeBuildResult] = {
-          log(s"received buildInitialize params: $input")
-          IO {
-            InitializeBuildResult(
-              displayName = "jk-sample-server",
-              "1.0.0",
-              bspVersion = "2.2.0-M2",
-              capabilities = BuildServerCapabilities(
-                compileProvider = Some(
-                  CompileProvider(languageIds = List(LanguageId("scala")))
+        override def buildInitialize(input: InitializeBuildParams): IO[InitializeBuildResult] =
+          log(s"received buildInitialize params: $input") *>
+            IO {
+              InitializeBuildResult(
+                displayName = "jk-sample-server",
+                "1.0.0",
+                bspVersion = "2.2.0-M2",
+                capabilities = BuildServerCapabilities(
+                  compileProvider = Some(
+                    CompileProvider(languageIds = List(LanguageId("scala")))
+                  ),
+                  dependencySourcesProvider = true,
                 ),
-                dependencySourcesProvider = true,
-              ),
-            )
-          }
-        }
+              )
+            }
 
         override def buildShutdown(): IO[Unit] =
           log("received a shutdown request") *>

@@ -25,6 +25,7 @@ val commonSettings = Seq(
         "-Ykind-projector",
         "-deprecation",
         "-Wunused:all",
+        "-Wnonunit-statement",
       )
     else
       Nil
