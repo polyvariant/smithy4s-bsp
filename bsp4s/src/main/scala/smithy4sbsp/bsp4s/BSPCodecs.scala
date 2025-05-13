@@ -16,8 +16,6 @@
 
 package smithy4sbsp.bsp4s
 
-import cats.syntax.all.*
-
 import jsonrpclib.Codec
 import jsonrpclib.Payload
 import jsonrpclib.ProtocolError
@@ -69,7 +67,8 @@ object BSPCodecs {
         .pipe { blob =>
           decoder
             .decode(blob)
-            .leftMap(pe => ProtocolError.ParseError(pe.toString()))
+            .left
+            .map(pe => ProtocolError.ParseError(pe.toString()))
         }
 
       def encode(a: A): Payload = Payload.Data(encoder.encode(a).toArrayUnsafe)

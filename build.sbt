@@ -49,6 +49,7 @@ lazy val transformation = project
     ),
     publish / skip := true,
   )
+  .disablePlugins(MimaPlugin)
 
 lazy val codegen = project
   .settings(
@@ -75,7 +76,6 @@ lazy val bsp4s = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect-kernel" % "3.6.1" % Test,
       "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.7+27-4fdf7547-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
     ),
@@ -94,6 +94,7 @@ lazy val sampleServer = project
     ),
     name := "sample-server",
   )
+  .disablePlugins(MimaPlugin)
   .dependsOn(bsp4s)
 
 lazy val root = project
