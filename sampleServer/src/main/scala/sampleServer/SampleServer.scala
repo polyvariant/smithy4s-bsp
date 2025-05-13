@@ -17,62 +17,52 @@
 package sampleServer
 
 import bsp.BuildServer
-
 import bsp.BuildServerCapabilities
-import bsp.BuildServerOperation.BuildInitialize
-import bsp.BuildServerOperation.BuildShutdown
+import bsp.BuildTarget
+import bsp.BuildTargetCapabilities
+import bsp.BuildTargetIdentifier
+import bsp.BuildTargetTag
+import bsp.CleanCacheParams
+import bsp.CleanCacheResult
+import bsp.CompileParams
 import bsp.CompileProvider
+import bsp.CompileResult
+import bsp.DependencySourcesItem
+import bsp.DependencySourcesParams
+import bsp.DependencySourcesResult
+import bsp.InitializeBuildParams
 import bsp.InitializeBuildResult
 import bsp.LanguageId
+import bsp.SourceItem
+import bsp.SourceItemKind
+import bsp.SourcesItem
+import bsp.SourcesParams
+import bsp.SourcesResult
+import bsp.StatusCode
+import bsp.URI
+import bsp.WorkspaceBuildTargetsResult
+import bsp.scala_.ScalaBuildServer
+import bsp.scala_.ScalaBuildTarget
+import bsp.scala_.ScalaMainClassesParams
+import bsp.scala_.ScalaMainClassesResult
+import bsp.scala_.ScalaPlatform
+import bsp.scala_.ScalaTestClassesParams
+import bsp.scala_.ScalaTestClassesResult
+import bsp.scala_.ScalacOptionsParams
+import bsp.scala_.ScalacOptionsResult
 import cats.effect.IO
 import cats.effect.IOApp
 import fs2.io.file.Files
 import fs2.io.file.Path
 import jsonrpclib.CallId
 import jsonrpclib.fs2.CancelTemplate
-import jsonrpclib.fs2.catsMonadic
 import jsonrpclib.fs2.FS2Channel
+import jsonrpclib.fs2.catsMonadic
 import jsonrpclib.fs2.lsp
-import bsp.BuildServerOperation.WorkspaceBuildTargets
-import bsp.WorkspaceBuildTargetsResult
-import bsp.BuildTarget
-import bsp.BuildTargetIdentifier
-import bsp.URI
-import bsp.BuildTargetTag
-import bsp.BuildTargetCapabilities
-import bsp.BuildServerOperation.BuildTargetSources
-import bsp.SourcesResult
-import bsp.SourceItem
-import bsp.SourceItemKind
-import bsp.SourcesItem
-import java.nio.file.Paths
-import bsp.BuildServerOperation.BuildTargetDependencySources
-import bsp.DependencySourcesResult
-import bsp.BuildServerOperation.BuildTargetCompile
-import bsp.CompileResult
-import bsp.StatusCode
-import bsp.scala_.ScalaBuildServerOperation.BuildTargetScalacOptions
-import bsp.scala_.ScalacOptionsResult
-import bsp.scala_.ScalaBuildServerOperation.BuildTargetScalaMainClasses
-import bsp.scala_.ScalaMainClassesResult
-import bsp.scala_.ScalaBuildServerOperation.BuildTargetScalaTestClasses
-import bsp.scala_.ScalaTestClassesResult
-import bsp.BuildServerOperation.BuildTargetCleanCache
-import bsp.CleanCacheResult
-import bsp.scala_.ScalacOptionsItem
-import bsp.DependencySourcesItem
-import bsp.scala_.ScalaPlatform
-import bsp.scala_.ScalaBuildTarget
-import bsp.BuildServerOperation.OnBuildExit
-import smithy4sbsp.bsp4s.BSPCodecs
-import bsp.scala_.ScalaBuildServer
 import smithy4s.kinds.stubs.Kind1
-import bsp.scala_.ScalaMainClassesParams
-import bsp.scala_.ScalaTestClassesParams
-import bsp.scala_.ScalacOptionsParams
-import bsp.BuildClientCapabilities
-import bsp.InitializeBuildParams
-import bsp.InitializeBuildParamsData
+import smithy4sbsp.bsp4s.BSPCodecs
+
+import java.nio.file.Paths
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
@@ -99,20 +89,16 @@ object SampleServer extends IOApp.Simple {
           }
         }
 
-        override def buildShutdown(
-          input: Unit
-        ): IO[Unit] =
+        override def buildShutdown(): IO[Unit] =
           log("received a shutdown request") *>
             IO.unit
 
-        override def buildExit(
-          input: Unit
+        override def onBuildExit(
         ): IO[Unit] =
           log("received a build exit notification") *>
             IO(sys.exit(0))
 
         override def workspaceBuildTargets(
-          input: Unit
         ): IO[WorkspaceBuildTargetsResult] =
           log("received a targets request") *>
             IO(
@@ -149,7 +135,7 @@ object SampleServer extends IOApp.Simple {
             )
 
         override def buildTargetSources(
-          input: BuildTargetIdentifier
+          input: SourcesParams
         ): IO[SourcesResult] =
           log(s"received a sources request: $input") *>
             IO(
@@ -180,7 +166,7 @@ object SampleServer extends IOApp.Simple {
             )
 
         override def buildTargetDependencySources(
-          input: BuildTargetIdentifier
+          input: DependencySourcesParams
         ): IO[DependencySourcesResult] =
           log(s"received dep sources params: $input") *>
             IO {
@@ -194,7 +180,7 @@ object SampleServer extends IOApp.Simple {
               )
             }
         override def buildTargetCompile(
-          input: BuildTargetIdentifier
+          input: CompileParams
         ): IO[CompileResult] =
           log(s"received compile params: $input") *>
             IO {
@@ -204,7 +190,7 @@ object SampleServer extends IOApp.Simple {
             }
 
         override def buildTargetCleanCache(
-          input: BuildTargetIdentifier
+          input: CleanCacheParams
         ): IO[CleanCacheResult] =
           log(s"received clean cache params: $input") *>
             IO(CleanCacheResult(cleaned = true, message = Some("cleaned cache")))
