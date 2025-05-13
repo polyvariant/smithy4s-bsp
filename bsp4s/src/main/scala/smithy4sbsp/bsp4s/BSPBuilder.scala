@@ -19,7 +19,6 @@ package smithy4sbsp.bsp4s
 import jsonrpclib.Codec
 import jsonrpclib.Endpoint
 import smithy4s.Service
-import cats.syntax.all.*
 import jsonrpclib.Monadic
 import jsonrpclib.JsonRequest
 import jsonrpclib.JsonNotification
