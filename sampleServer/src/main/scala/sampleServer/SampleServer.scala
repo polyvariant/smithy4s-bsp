@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
+
 package sampleServer
 
 import bsp.BuildServer
@@ -29,7 +29,6 @@ import cats.effect.IOApp
 import fs2.io.file.Files
 import fs2.io.file.Path
 import jsonrpclib.CallId
-import jsonrpclib.Codec
 import jsonrpclib.fs2.CancelTemplate
 import jsonrpclib.fs2.catsMonadic
 import jsonrpclib.fs2.FS2Channel
@@ -65,18 +64,26 @@ import bsp.DependencySourcesItem
 import bsp.scala_.ScalaPlatform
 import bsp.scala_.ScalaBuildTarget
 import bsp.BuildServerOperation.OnBuildExit
-import smithy4sbsp.bsp4s.BSPBuilder
+import smithy4sbsp.bsp4s.BSPCodecs
+import bsp.scala_.ScalaBuildServer
+import smithy4s.kinds.stubs.Kind1
+import bsp.scala_.ScalaMainClassesParams
+import bsp.scala_.ScalaTestClassesParams
+import bsp.scala_.ScalacOptionsParams
+import bsp.BuildClientCapabilities
+import bsp.InitializeBuildParams
+import bsp.InitializeBuildParamsData
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
 
   val targetId = BuildTargetIdentifier(URI("proj://hello"))
 
-  def server(log: String => IO[Unit]) =
-    BSPBuilder
-      .create(BuildServer)
-      .withHandler(BuildInitialize) { input =>
-        log(s"received a valid request with inputs $input") *>
+  def server(log: String => IO[Unit]) = List.concat(
+    BSPCodecs.serverEndpoints(
+      new BuildServer.Default[IO](IO.stub) {
+        override def buildInitialize(input: InitializeBuildParams): IO[InitializeBuildResult] = {
+          log(s"received buildInitialize params: $input")
           IO {
             InitializeBuildResult(
               displayName = "jk-sample-server",
@@ -90,132 +97,142 @@ object SampleServer extends IOApp.Simple {
               ),
             )
           }
+        }
 
-      }
-      .withHandler(BuildShutdown) { _ =>
-        log("received a shutdown request")
-      }
-      .withHandler(OnBuildExit)(_ =>
-        // this doesn't actually get called. Metals bug? (per spec)
-        log("received a build exit notification") *>
-          IO(sys.exit(0))
-      )
-      .withHandler(WorkspaceBuildTargets) { _ =>
-        log("received a targets request") *>
-          IO(
-            WorkspaceBuildTargetsResult(
-              List(
-                BuildTarget.buildTargetScalaBuildTarget(
-                  id = targetId,
-                  tags = List(BuildTargetTag.LIBRARY),
-                  languageIds = List(LanguageId("scala")),
-                  dependencies = Nil,
-                  capabilities = BuildTargetCapabilities(
-                    canCompile = Some(true),
-                    canRun = Some(true),
-                    canTest = Some(true),
-                    canDebug = Some(true),
+        override def buildShutdown(
+          input: Unit
+        ): IO[Unit] =
+          log("received a shutdown request") *>
+            IO.unit
+
+        override def buildExit(
+          input: Unit
+        ): IO[Unit] =
+          log("received a build exit notification") *>
+            IO(sys.exit(0))
+
+        override def workspaceBuildTargets(
+          input: Unit
+        ): IO[WorkspaceBuildTargetsResult] =
+          log("received a targets request") *>
+            IO(
+              WorkspaceBuildTargetsResult(
+                List(
+                  BuildTarget.buildTargetScalaBuildTarget(
+                    id = targetId,
+                    tags = List(BuildTargetTag.LIBRARY),
+                    languageIds = List(LanguageId("scala")),
+                    dependencies = Nil,
+                    capabilities = BuildTargetCapabilities(
+                      canCompile = Some(true),
+                      canRun = Some(true),
+                      canTest = Some(true),
+                      canDebug = Some(true),
+                    ),
+                    displayName = Some("jk-hello"),
+                    baseDirectory = Some(
+                      URI(Paths.get("./").toAbsolutePath().toUri().toString())
+                    ),
+                    data = Some(
+                      ScalaBuildTarget(
+                        scalaOrganization = "org.scala-lang",
+                        scalaVersion = "3.7.0-RC1",
+                        scalaBinaryVersion = "3.7",
+                        platform = ScalaPlatform.JVM,
+                        jars = Nil,
+                        jvmBuildTarget = None,
+                      )
+                    ),
+                  )
+                )
+              )
+            )
+
+        override def buildTargetSources(
+          input: BuildTargetIdentifier
+        ): IO[SourcesResult] =
+          log(s"received a sources request: $input") *>
+            IO(
+              SourcesResult(
+                List(
+                  SourcesItem(
+                    target = targetId,
+                    sources = List(
+                      SourceItem(
+                        uri = URI(Paths.get("./hello").toAbsolutePath().toUri().toString()),
+                        kind = SourceItemKind.DIRECTORY,
+                        generated = false,
+                      )
+                    ),
                   ),
-                  displayName = Some("jk-hello"),
-                  baseDirectory = Some(
-                    URI(Paths.get("./").toAbsolutePath().toUri().toString())
-                  ),
-                  data = Some(
-                    ScalaBuildTarget(
-                      scalaOrganization = "org.scala-lang",
-                      scalaVersion = "3.7.0-RC1",
-                      scalaBinaryVersion = "3.7",
-                      platform = ScalaPlatform.JVM,
-                      jars = Nil,
-                      jvmBuildTarget = None,
-                    )
+                  SourcesItem(
+                    target = targetId,
+                    sources = List(
+                      SourceItem(
+                        uri = URI(Paths.get("./hello2").toAbsolutePath().toUri().toString()),
+                        kind = SourceItemKind.DIRECTORY,
+                        generated = false,
+                      )
+                    ),
                   ),
                 )
               )
             )
-          )
-      }
-      .withHandler(BuildTargetSources) { _ =>
-        log("received a sources request") *>
-          IO(
-            SourcesResult(
-              List(
-                SourcesItem(
-                  target = targetId,
-                  sources = List(
-                    SourceItem(
-                      uri = URI(Paths.get("./hello").toAbsolutePath().toUri().toString()),
-                      kind = SourceItemKind.DIRECTORY,
-                      generated = false,
-                    )
-                  ),
-                ),
-                SourcesItem(
-                  target = targetId,
-                  sources = List(
-                    SourceItem(
-                      uri = URI(Paths.get("./hello2").toAbsolutePath().toUri().toString()),
-                      kind = SourceItemKind.DIRECTORY,
-                      generated = false,
-                    )
-                  ),
-                ),
-              )
-            )
-          )
-      }
-      .withHandler(BuildTargetDependencySources) { params =>
-        log(s"received dep sources params: $params") *>
-          IO {
-            DependencySourcesResult(
-              List(
-                DependencySourcesItem(
-                  target = targetId,
-                  sources = Nil,
+
+        override def buildTargetDependencySources(
+          input: BuildTargetIdentifier
+        ): IO[DependencySourcesResult] =
+          log(s"received dep sources params: $input") *>
+            IO {
+              DependencySourcesResult(
+                List(
+                  DependencySourcesItem(
+                    target = targetId,
+                    sources = Nil,
+                  )
                 )
               )
-            )
-          }
-      }
-      .withHandler(BuildTargetCompile) { params =>
-        log(s"received compile params: $params") *>
-          IO {
-            CompileResult(
-              statusCode = StatusCode.OK
-            )
-          }
-      }
-      .withHandler(BuildTargetScalacOptions) { params =>
-        log(s"received scalac options params: $params") *>
-          IO {
-            ScalacOptionsResult(
-              List(
-                ScalacOptionsItem(
-                  target = targetId,
-                  options = Nil,
-                  classpath = Nil,
-                  classDirectory = Paths.get("./out").toAbsolutePath().toUri().toString(),
-                )
+            }
+        override def buildTargetCompile(
+          input: BuildTargetIdentifier
+        ): IO[CompileResult] =
+          log(s"received compile params: $input") *>
+            IO {
+              CompileResult(
+                statusCode = StatusCode.OK
               )
-            )
-          }
-      }
-      .withHandler(BuildTargetScalaMainClasses) { params =>
-        log(s"received main classes params: $params") *>
-          IO {
-            ScalaMainClassesResult(Nil)
-          }
-      }
-      .withHandler(BuildTargetScalaTestClasses) { params =>
-        log(s"received test classes params: $params") *>
+            }
+
+        override def buildTargetCleanCache(
+          input: BuildTargetIdentifier
+        ): IO[CleanCacheResult] =
+          log(s"received clean cache params: $input") *>
+            IO(CleanCacheResult(cleaned = true, message = Some("cleaned cache")))
+      }: BuildServer[IO]
+    ),
+    BSPCodecs.serverEndpoints(new ScalaBuildServer[IO] {
+      override def buildTargetScalaTestClasses(
+        input: ScalaTestClassesParams
+      ): IO[ScalaTestClassesResult] =
+        log(s"received test classes params: $input") *>
           IO {
             ScalaTestClassesResult(Nil)
           }
-      }
-      .withHandler(BuildTargetCleanCache) { params =>
-        log(s"received clean cache params: $params") *>
-          IO(CleanCacheResult(cleaned = true, message = Some("cleaned cache")))
-      }
+
+      override def buildTargetScalaMainClasses(
+        input: ScalaMainClassesParams
+      ): IO[ScalaMainClassesResult] =
+        log(s"received main classes params: $input") *>
+          IO {
+            ScalaMainClassesResult(Nil)
+          }
+      override def buildTargetScalacOptions(input: ScalacOptionsParams): IO[ScalacOptionsResult] =
+        log(s"received scalacOptions params: $input") *>
+          IO {
+            ScalacOptionsResult(Nil)
+          }
+    }),
+  )
 
   def run: IO[Unit] = {
     val impl = server(msg =>
@@ -245,4 +262,3 @@ object SampleServer extends IOApp.Simple {
   }
 
 }
- */
