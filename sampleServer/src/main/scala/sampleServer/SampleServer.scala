@@ -235,13 +235,13 @@ object SampleServer extends IOApp.Simple {
   )
 
   def run: IO[Unit] = {
-    val impl = server(msg =>
+    val endpoints = server(msg =>
       fs2.Stream(msg + "\n").through(Files[IO].writeUtf8(Path("log.txt"))).compile.drain
     )
 
     FS2Channel
       .stream[IO](cancelTemplate = Some(cancelEndpoint))
-      .flatMap(_.withEndpointsStream(impl.build))
+      .flatMap(_.withEndpointsStream(endpoints))
       .flatMap(channel =>
         fs2
           .Stream
