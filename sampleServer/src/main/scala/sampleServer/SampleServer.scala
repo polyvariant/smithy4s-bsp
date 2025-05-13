@@ -53,6 +53,7 @@ import bsp.scala_.ScalacOptionsResult
 import cats.effect.IO
 import cats.effect.IOApp
 import fs2.io.file.Files
+import fs2.io.file.Flags
 import fs2.io.file.Path
 import jsonrpclib.CallId
 import jsonrpclib.fs2.CancelTemplate
@@ -63,7 +64,6 @@ import smithy4s.kinds.stubs.Kind1
 import smithy4sbsp.bsp4s.BSPCodecs
 
 import java.nio.file.Paths
-import fs2.io.file.Flags
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
@@ -94,8 +94,7 @@ object SampleServer extends IOApp.Simple {
           log("received a shutdown request") *>
             IO.unit
 
-        override def onBuildExit(
-        ): IO[Unit] =
+        override def onBuildExit(): IO[Unit] =
           log("received a build exit notification") *>
             IO(sys.exit(0))
 
