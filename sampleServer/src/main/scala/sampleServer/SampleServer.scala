@@ -63,6 +63,7 @@ import smithy4s.kinds.stubs.Kind1
 import smithy4sbsp.bsp4s.BSPCodecs
 
 import java.nio.file.Paths
+import fs2.io.file.Flags
 
 object SampleServer extends IOApp.Simple {
   val cancelEndpoint = CancelTemplate.make[CallId]("$/cancel", identity, identity)
@@ -222,7 +223,11 @@ object SampleServer extends IOApp.Simple {
 
   def run: IO[Unit] = {
     val endpoints = server(msg =>
-      fs2.Stream(msg + "\n").through(Files[IO].writeUtf8(Path("log.txt"))).compile.drain
+      fs2
+        .Stream(msg + "\n")
+        .through(Files[IO].writeUtf8(Path("log.txt"), Flags.Append))
+        .compile
+        .drain
     )
 
     FS2Channel
