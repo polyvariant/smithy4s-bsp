@@ -1,4 +1,4 @@
-ThisBuild / tlBaseVersion := "0.2"
+ThisBuild / tlBaseVersion := "0.3"
 ThisBuild / organization := "org.polyvariant.smithy4s-bsp"
 ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
@@ -48,8 +48,9 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-diff" % "1.57.1" % Test,
     ),
     publish / skip := true,
+    mimaPreviousArtifacts := Set.empty,
+    mimaFailOnNoPrevious := false,
   )
-  .disablePlugins(MimaPlugin)
 
 lazy val codegen = project
   .settings(
@@ -94,8 +95,9 @@ lazy val sampleServer = project
       "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
     ),
     name := "sample-server",
+    mimaPreviousArtifacts := Set.empty,
+    mimaFailOnNoPrevious := false,
   )
-  .disablePlugins(MimaPlugin)
   .dependsOn(bsp4s)
 
 lazy val root = project
