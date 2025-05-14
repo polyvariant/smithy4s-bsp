@@ -31,7 +31,7 @@ package smithy4sbsp.bsp4s
  * limitations under the License.
  */
 
-import BuildTargetTest.BuildTargetTestInput
+import bsp.BuildTargetTestInput
 import bsp.BuildTarget
 import bsp.BuildTargetCapabilities
 import bsp.BuildTargetIdentifier
@@ -53,6 +53,16 @@ import weaver.*
 
 import java.nio.file.Paths
 import scala.annotation.nowarn
+import bsp.CodeDescription
+import bsp.DiagnosticTag
+import bsp.DiagnosticRelatedInformation
+import bsp.Location
+import bsp.DiagnosticCode
+import bsp.scala_.ScalaDiagnostic
+import bsp.scala_.ScalaAction
+import bsp.scala_.ScalaWorkspaceEdit
+import bsp.scala_.ScalaTextEdit
+import bsp.Diagnostic
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
@@ -133,6 +143,180 @@ object BSPCodecsTest extends FunSuite {
       }"""
 
     roundtripTest(input, expected)
+  }
+
+  test("Diagnostics") {
+    val input = bsp.Diagnostics(
+      List(
+        bsp
+          .Diagnostic
+          .diagnosticScalaDiagnostic(
+            range = bsp.Range(
+              start = bsp.Position(bsp.Integer(0), bsp.Integer(0)),
+              end = bsp.Position(bsp.Integer(1), bsp.Integer(1)),
+            ),
+            message = "division by zero",
+            severity = Some(bsp.DiagnosticSeverity.ERROR),
+            code = Some(DiagnosticCode.string("code")),
+            codeDescription = Some(CodeDescription(URI("proj://hello"))),
+            source = Some("src"),
+            tags = Some(
+              List(
+                DiagnosticTag.DEPRECATED
+              )
+            ),
+            relatedInformation = Some(
+              List(
+                DiagnosticRelatedInformation(
+                  location = Location(
+                    uri = URI("proj://hello"),
+                    range = bsp.Range(
+                      start = bsp.Position(bsp.Integer(0), bsp.Integer(0)),
+                      end = bsp.Position(bsp.Integer(1), bsp.Integer(1)),
+                    ),
+                  ),
+                  message = "look here",
+                )
+              )
+            ),
+            data = Some(
+              ScalaDiagnostic(
+                actions = Some(
+                  List(
+                    ScalaAction(
+                      title = "fix",
+                      description = Some("fix it"),
+                      edit = Some(
+                        ScalaWorkspaceEdit(
+                          changes = List(
+                            ScalaTextEdit(
+                              range = bsp.Range(
+                                start = bsp.Position(bsp.Integer(0), bsp.Integer(0)),
+                                end = bsp.Position(bsp.Integer(1), bsp.Integer(1)),
+                              ),
+                              newText = "new text",
+                            )
+                          )
+                        )
+                      ),
+                    )
+                  )
+                )
+              )
+            ),
+          )
+      )
+    )
+
+    roundtripTest(
+      input,
+      json"""[
+          {
+            "source": "src",
+            "dataKind": "scala",
+            "tags": [ 2 ],
+            "data": {
+              "actions": [
+                {
+                  "title": "fix",
+                  "description": "fix it",
+                  "edit": {
+                    "changes": [
+                      {
+                        "range": {
+                          "start": { "line": 0, "character": 0 },
+                          "end": { "line": 1, "character": 1 }
+                        },
+                        "newText": "new text"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "code": "code",
+            "range": {
+              "start": { "line": 0, "character": 0 },
+              "end": { "line": 1, "character": 1 }
+            },
+            "message": "division by zero",
+            "severity": 1,
+            "codeDescription": { "href": "proj://hello" },
+            "relatedInformation": [
+              {
+                "location": {
+                  "uri": "proj://hello",
+                  "range": {
+                    "start": { "line": 0, "character": 0 },
+                    "end": { "line": 1, "character": 1 }
+                  }
+                },
+                "message": "look here"
+              }
+            ]
+          }
+        ]""",
+    )
+  }
+
+  test("Diagnostic (real sample from bloo)") {
+    val encoded =
+      json"""{
+        "textDocument": {
+          "uri": "file:///Users/kubukoz/projects/smithy-playground/modules/ast/src/main/scala/playground/smithyql/AST.scala"
+        },
+        "buildTarget": {
+          "uri": "file:/Users/kubukoz/projects/smithy-playground/modules/ast/?id=ast"
+        },
+        "diagnostics": [
+          {
+            "source": "bloop",
+            "range": {
+              "start": { "line": 183, "character": 24 },
+              "end": { "line": 183, "character": 24 }
+            },
+            "severity": 2,
+            "code": "198",
+            "message": "unused implicit parameter",
+            "data": { "actions": [] }
+          }
+        ],
+        "reset": false
+      }"""
+
+    val input = bsp.PublishDiagnosticsParams(
+      textDocument = bsp.TextDocumentIdentifier(
+        uri = URI(
+          "file:///Users/kubukoz/projects/smithy-playground/modules/ast/src/main/scala/playground/smithyql/AST.scala"
+        )
+      ),
+      buildTarget = bsp.BuildTargetIdentifier(
+        uri = URI("file:/Users/kubukoz/projects/smithy-playground/modules/ast/?id=ast")
+      ),
+      diagnostics = List(
+        Diagnostic.diagnosticScalaDiagnostic(
+          range = bsp.Range(
+            start = bsp.Position(bsp.Integer(183), bsp.Integer(24)),
+            end = bsp.Position(bsp.Integer(183), bsp.Integer(24)),
+          ),
+          severity = Some(bsp.DiagnosticSeverity.WARNING),
+          code = Some(DiagnosticCode.string("198")),
+          source = Some("bloop"),
+          message = "unused implicit parameter",
+          data = Some(
+            ScalaDiagnostic(
+              actions = Some(Nil)
+            )
+          ),
+        )
+      ),
+      reset = false,
+    )
+
+    roundtripTest(
+      input,
+      encoded,
+    )
   }
 
   // compilation test

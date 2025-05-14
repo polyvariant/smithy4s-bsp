@@ -74,6 +74,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
     val transformed = mb.build()
 
     dump(transformed)
+    // todo: test for @data without any kinds
+    // todo: what to do when data is optional and missing?
 
     transformed
   }
@@ -279,7 +281,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
   private def makeRpcPayloadWrapper(op: OperationShape, wraps: ShapeId, suffix: String)
     : StructureShape = StructureShape
     .builder()
-    .id(ShapeId.fromParts(op.getId().getName(), op.getId().getName() + suffix))
+    .id(ShapeId.fromParts(op.getId().getNamespace(), op.getId().getName() + suffix))
     .addMember(
       "data",
       wraps,

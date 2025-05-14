@@ -21,6 +21,9 @@ import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.transform.ModelTransformer
 
 import scala.collection.JavaConverters.*
+import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class RenameScalaNamespace extends ProjectionTransformer {
   def getName(): String = "rename-scala-namespace"
@@ -40,17 +43,35 @@ class RenameScalaNamespace extends ProjectionTransformer {
 
   }
 
-  def transform(context: TransformContext): Model = ModelTransformer
-    .create()
-    .renameShapes(
-      context.getModel(),
-      context
-        .getModel()
-        .getShapeIds()
-        .asScala
-        .collect { case id @ Renamed(renamed) => id -> renamed }
-        .toMap
-        .asJava,
-    )
+  def transform(context: TransformContext): Model = {
+    val transformed = ModelTransformer
+      .create()
+      .renameShapes(
+        context.getModel(),
+        context
+          .getModel()
+          .getShapeIds()
+          .asScala
+          .collect { case id @ Renamed(renamed) => id -> renamed }
+          .toMap
+          .asJava,
+      )
+
+    SmithyIdlModelSerializer
+      .builder()
+      .basePath(Paths.get("transformed"))
+      .shapeFilter(s => s.getId().getNamespace().startsWith("bsp"))
+      .build()
+      .serialize(transformed)
+      .asScala
+      .toMap
+      .foreach { case (path, content) =>
+        Files.createDirectories(path.getParent())
+
+        Files.writeString(path, content)
+      }
+
+    transformed
+  }
 
 }

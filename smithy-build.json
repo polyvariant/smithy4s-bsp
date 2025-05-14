@@ -1,17 +1,14 @@
 {
-    "version" : "1.0",
-    "sources" : [
-        "codegen/src/main/smithy",
-        "codegen/target/scala-3.3.5/src_managed/main/smithy"
+  "version": "1.0",
+  "sources": ["transformed"],
+  "maven": {
+    "dependencies": [
+      "com.disneystreaming.alloy:alloy-core:0.3.19",
+      "com.disneystreaming.smithy4s:smithy4s-protocol:0.18.35"
     ],
-    "maven" : {
-        "dependencies" : [
-            "com.disneystreaming.alloy:alloy-core:0.3.19",
-            "ch.epfl.scala:spec:2.2.0-M2",
-            "ch.epfl.scala:spec-traits:2.2.0-M2",
-            "com.disneystreaming.smithy4s:smithy4s-protocol:0.18.35"
-        ],
-        "repositories" : [
-        ]
-    }
+    "repositories": []
+  },
+  "imports": [
+    "/Users/kubukoz/projects/smithy-playground-demo/jsonrpclib/META-INF/smithy/"
+  ]
 }
