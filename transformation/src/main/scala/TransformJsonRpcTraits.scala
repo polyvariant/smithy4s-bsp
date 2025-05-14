@@ -21,45 +21,33 @@ import software.amazon.smithy.model.transform.ModelTransformer
 import bsp.traits.JsonNotificationTrait
 import bsp.traits.JsonRequestTrait
 import bsp.traits.JsonRPCTrait
+import java.util.function.BiFunction
+import scala.collection.JavaConverters.*
+import software.amazon.smithy.model.traits.Trait
+import software.amazon.smithy.model.shapes.Shape
 
 class TransformJsonRpcTraits extends ProjectionTransformer {
   def getName(): String = "transform-jsonrpclib-traits"
 
   def transform(context: TransformContext): Model = ModelTransformer
     .create()
-    .mapShapes(
+    .mapTraits(
       context.getModel(),
-      s =>
-        s match {
-          case s if s.hasTrait(JsonRPCTrait.ID) =>
-            val builder = s.asServiceShape.get.toBuilder()
-            builder.removeTrait(JsonRPCTrait.ID)
-            builder.addTrait(jsonrpclib.JsonRPCTrait.builder().build())
-            builder.build()
-
-          case s if s.hasTrait(JsonNotificationTrait.ID) =>
-            val builder = s.asOperationShape.get.toBuilder()
-            builder.removeTrait(JsonNotificationTrait.ID)
-            builder.addTrait(
-              new jsonrpclib.JsonNotificationTrait.Provider().createTrait(
-                jsonrpclib.JsonNotificationTrait.ID,
-                s.getAllTraits().get(JsonNotificationTrait.ID).toNode(),
-              )
-            )
-            builder.build()
-
-          case s if s.hasTrait(JsonRequestTrait.ID) =>
-            val builder = s.asOperationShape.get.toBuilder()
-            builder.removeTrait(JsonRequestTrait.ID)
-            builder.addTrait(
-              new jsonrpclib.JsonRequestTrait.Provider().createTrait(
-                jsonrpclib.JsonRequestTrait.ID,
-                s.getAllTraits().get(JsonRequestTrait.ID).toNode(),
-              )
-            )
-            builder.build()
-          case s => s
+      List[BiFunction[Shape, Trait, Trait]](
+        {
+          case (_, _: JsonRPCTrait) => jsonrpclib.JsonRPCTrait.builder().build()
+          case (_, trt)             => trt
         },
+        {
+          case (_, trt: JsonNotificationTrait) =>
+            new jsonrpclib.JsonNotificationTrait(trt.getValue())
+          case (_, trt) => trt
+        },
+        {
+          case (_, trt: JsonRequestTrait) => new jsonrpclib.JsonRequestTrait(trt.getValue())
+          case (_, trt)                   => trt
+        },
+      ).asJava,
     )
 
 }
