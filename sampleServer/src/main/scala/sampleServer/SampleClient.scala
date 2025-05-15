@@ -16,16 +16,17 @@
 
 package sampleServer
 
-import bsp.OnBuildTaskFinishInput
-import bsp.OnBuildTaskStartInput
 import bsp.BuildClient
 import bsp.BuildClientCapabilities
 import bsp.BuildServer
 import bsp.BuildTargetIdentifier
+import bsp.CompileParams
 import bsp.DidChangeBuildTarget
 import bsp.InitializeBuildParams
 import bsp.LanguageId
 import bsp.LogMessageParams
+import bsp.OnBuildTaskFinishInput
+import bsp.OnBuildTaskStartInput
 import bsp.PrintParams
 import bsp.PublishDiagnosticsParams
 import bsp.ShowMessageParams
@@ -36,6 +37,8 @@ import bsp.scala_.ScalaBuildServer
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.kernel.Resource
+import cats.syntax.all.*
+import fs2.Pipe
 import fs2.io.file.Files
 import fs2.io.file.Path
 import fs2.io.net.Socket
@@ -46,10 +49,6 @@ import fs2.io.process.ProcessBuilder
 import fs2.io.process.Processes
 import jsonrpclib.fs2.*
 import smithy4sbsp.bsp4s.BSPCodecs
-
-import scala.concurrent.duration.*
-import cats.syntax.all.*
-import fs2.Pipe
 
 object SampleClient extends IOApp.Simple {
   case class Bloop(bs: BuildServer[IO], scala: ScalaBuildServer[IO])
@@ -200,6 +199,15 @@ object SampleClient extends IOApp.Simple {
       bs.buildTargetSources(
         SourcesParams(targets =
           List(
+            BuildTargetIdentifier(
+              URI("file:/Users/kubukoz/projects/smithy-playground/modules/lsp2/?id=lsp2")
+            )
+          )
+        )
+      ).flatMap(IO.println) *>
+      bs.buildTargetCompile(
+        CompileParams(
+          targets = List(
             BuildTargetIdentifier(
               URI("file:/Users/kubukoz/projects/smithy-playground/modules/lsp2/?id=lsp2")
             )
