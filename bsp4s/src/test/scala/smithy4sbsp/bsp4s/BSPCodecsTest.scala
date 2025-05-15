@@ -63,20 +63,23 @@ import bsp.scala_.ScalaWorkspaceEdit
 import bsp.scala_.ScalaTextEdit
 import bsp.Diagnostic
 import jsonrpclib.smithy4sinterop.CirceJsonCodec
+import bsp.scala_.ScalaTestParams
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
     val input = BuildTargetTestInput(
       data = TestParams.testParamsScalaTestParams(
-        targets = Nil
+        targets = Nil,
+        data = ScalaTestParams(),
       )
     )
 
     roundtripTest(
       input,
       json"""{
+        "targets": [],
         "dataKind": "scala-test",
-        "targets": []
+        "data": {}
         }""",
     )
   }
@@ -100,15 +103,13 @@ object BSPCodecsTest extends FunSuite {
           baseDirectory = Some(
             URI(Paths.get("/foo/bar").toUri().toString())
           ),
-          data = Some(
-            ScalaBuildTarget(
-              scalaOrganization = "org.scala-lang",
-              scalaVersion = "3.7.0-RC1",
-              scalaBinaryVersion = "3.7",
-              platform = ScalaPlatform.JVM,
-              jars = Nil,
-              jvmBuildTarget = None,
-            )
+          data = ScalaBuildTarget(
+            scalaOrganization = "org.scala-lang",
+            scalaVersion = "3.7.0-RC1",
+            scalaBinaryVersion = "3.7",
+            platform = ScalaPlatform.JVM,
+            jars = Nil,
+            jvmBuildTarget = None,
           ),
         )
       )
@@ -179,27 +180,25 @@ object BSPCodecsTest extends FunSuite {
                 )
               )
             ),
-            data = Some(
-              ScalaDiagnostic(
-                actions = Some(
-                  List(
-                    ScalaAction(
-                      title = "fix",
-                      description = Some("fix it"),
-                      edit = Some(
-                        ScalaWorkspaceEdit(
-                          changes = List(
-                            ScalaTextEdit(
-                              range = bsp.Range(
-                                start = bsp.Position(bsp.Integer(0), bsp.Integer(0)),
-                                end = bsp.Position(bsp.Integer(1), bsp.Integer(1)),
-                              ),
-                              newText = "new text",
-                            )
+            data = ScalaDiagnostic(
+              actions = Some(
+                List(
+                  ScalaAction(
+                    title = "fix",
+                    description = Some("fix it"),
+                    edit = Some(
+                      ScalaWorkspaceEdit(
+                        changes = List(
+                          ScalaTextEdit(
+                            range = bsp.Range(
+                              start = bsp.Position(bsp.Integer(0), bsp.Integer(0)),
+                              end = bsp.Position(bsp.Integer(1), bsp.Integer(1)),
+                            ),
+                            newText = "new text",
                           )
                         )
-                      ),
-                    )
+                      )
+                    ),
                   )
                 )
               )
@@ -303,10 +302,8 @@ object BSPCodecsTest extends FunSuite {
           code = Some(DiagnosticCode.string("198")),
           source = Some("bloop"),
           message = "unused implicit parameter",
-          data = Some(
-            ScalaDiagnostic(
-              actions = Some(Nil)
-            )
+          data = ScalaDiagnostic(
+            actions = Some(Nil)
           ),
         )
       ),
@@ -322,7 +319,7 @@ object BSPCodecsTest extends FunSuite {
   // compilation test
   @nowarn("msg=unused")
   def sanityCheck(t: BuildTarget.BuildTargetScalaBuildTarget): Unit = {
-    val bt: JvmBuildTarget = t.data.get.jvmBuildTarget.get
+    val bt: JvmBuildTarget = t.data.jvmBuildTarget.get
     val jvm: Option[String] = bt.javaVersion
   }
 

@@ -41,6 +41,7 @@ lazy val transformation = project
     scalaVersion := "2.12.20",
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.57.1",
+      "software.amazon.smithy" % "smithy-syntax" % "1.57.1",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % "0.0.7+36-edbb9b01-SNAPSHOT",
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",

@@ -23,10 +23,16 @@ import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.loader.ModelAssembler
 import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
 import java.nio.file.Paths
+import software.amazon.smithy.model.loader.IdlTokenizer
+import software.amazon.smithy.syntax
 
 object TransformBuildTargetDataTest extends FunSuite {
   test("Sample transformation of data") {
     transformationComparisonTest(os.sub / "sampleDataTraits")
+  }
+
+  test("transformation of optional data") {
+    transformationComparisonTest(os.sub / "optionalData")
   }
 
   test("Sample transformation in operation input") {
@@ -61,19 +67,36 @@ object TransformBuildTargetDataTest extends FunSuite {
         .asScala
         .toList
 
+    val actualFile =
+      os.pwd / "transformation" / "src" / "test" / "resources" / "smithy" / directory / "actual.smithy"
+
     if (diff.nonEmpty) {
-      val tmp = os.temp(
-        SmithyIdlModelSerializer
-          .builder()
-          .build()
-          .serialize(result)
-          .get(Paths.get("sample.smithy")),
-        suffix = "sample.smithy",
-      )
-      println(s"wrote to $tmp")
-    }
+
+      os.write
+        .over(
+          actualFile,
+          format(
+            SmithyIdlModelSerializer
+              .builder()
+              .build()
+              .serialize(result)
+              .get(Paths.get("sample.smithy"))
+          ),
+        )
+
+      println(s"wrote actual contents to $actualFile")
+    } else
+      os.remove(actualFile)
 
     assert(diff.isEmpty, diff.map(_.toString()).mkString("\n"))
+  }
+
+  private def format(string: String): String = {
+
+    val tokenizer = IdlTokenizer.create(string)
+    val tree = syntax.TokenTree.of(tokenizer)
+
+    syntax.Formatter.format(tree)
   }
 
   private def loadModel(resources: os.SubPath*): Model = {
