@@ -75,6 +75,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
     val transformed = mb.build()
 
     dump(transformed)
+    // todo: test for @data without any kinds
+    // todo: what to do when data is optional and missing?
 
     transformed
   }
