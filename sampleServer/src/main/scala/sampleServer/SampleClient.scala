@@ -33,6 +33,7 @@ import smithy4sbsp.bsp4s.BSPCodecs
 
 import scala.concurrent.duration.*
 import cats.syntax.all.*
+import fs2.Pipe
 
 object SampleClient extends IOApp.Simple {
   case class Bloop(bs: BuildServer[IO], scala: ScalaBuildServer[IO])
@@ -49,15 +50,29 @@ object SampleClient extends IOApp.Simple {
       )
     )
     .flatTap { proc =>
-      proc
-        .stdout
-        .merge(proc.stderr)
-        .through(fs2.text.utf8.decode)
-        .through(fs2.text.lines)
-        .debug("[bloop] " + _)
-        .compile
-        .drain
-        .background
+      IO.deferred[Unit].toResource.flatMap { started =>
+        val waitForStart: Pipe[IO, Byte, Nothing] =
+          _.through(fs2.text.utf8.decode)
+            .through(fs2.text.lines)
+            .find(_.contains("The server is listening for incoming connections"))
+            .foreach(_ => started.complete(()).void)
+            .drain
+
+        proc
+          .stdout
+          .observe(
+            waitForStart
+          )
+          .merge(proc.stderr)
+          .through(fs2.text.utf8.decode)
+          .through(fs2.text.lines)
+          .debug("[bloop] " + _)
+          .compile
+          .drain
+          .background
+          // wait for the started message before proceeding
+          .evalTap(_ => started.get)
+      }
     }
 
   def connectTo(socketFile: Path) = UnixSockets
@@ -92,8 +107,7 @@ object SampleClient extends IOApp.Simple {
     for {
       socketFile <- mkSocket
       bloopProcess <- runBloop(socketFile)
-      _ <-
-        (IO.consoleForIO.errorln("bloop process: " + bloopProcess) *> IO.sleep(1.second)).toResource
+      _ <- IO.consoleForIO.errorln("bloop process: " + bloopProcess).toResource
 
       socket <- connectTo(socketFile)
       chan <- FS2Channel.resource[IO]()
@@ -163,6 +177,7 @@ object SampleClient extends IOApp.Simple {
           ),
         )
       )
+      .void
       .flatMap(IO.println) *>
       bs.onBuildInitialized() *>
       bs.workspaceBuildTargets().flatMap(IO.println) *>
