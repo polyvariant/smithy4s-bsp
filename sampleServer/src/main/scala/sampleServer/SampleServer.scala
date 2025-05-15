@@ -118,15 +118,13 @@ object SampleServer extends IOApp.Simple {
                     baseDirectory = Some(
                       URI(Paths.get("./").toAbsolutePath().toUri().toString())
                     ),
-                    data = Some(
-                      ScalaBuildTarget(
-                        scalaOrganization = "org.scala-lang",
-                        scalaVersion = "3.7.0-RC1",
-                        scalaBinaryVersion = "3.7",
-                        platform = ScalaPlatform.JVM,
-                        jars = Nil,
-                        jvmBuildTarget = None,
-                      )
+                    data = ScalaBuildTarget(
+                      scalaOrganization = "org.scala-lang",
+                      scalaVersion = "3.7.0-RC1",
+                      scalaBinaryVersion = "3.7",
+                      platform = ScalaPlatform.JVM,
+                      jars = Nil,
+                      jvmBuildTarget = None,
                     ),
                   )
                 )

@@ -39,7 +39,6 @@ import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.shapes.AbstractShapeBuilder
 import smithy4s.meta.AdtTrait
 import software.amazon.smithy.model.traits.InputTrait
-import software.amazon.smithy.model.traits.DocumentationTrait
 import software.amazon.smithy.model.loader.Prelude
 
 class TransformBuildTargetData extends ProjectionTransformer {
