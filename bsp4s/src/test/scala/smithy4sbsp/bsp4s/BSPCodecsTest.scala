@@ -47,12 +47,12 @@ import cats.effect.IO
 import io.circe.*
 import io.circe.Codec
 import io.circe.literal.*
-import jsonrpclib.Hack
 import smithy4s.schema.Schema
 import weaver.*
 
 import java.nio.file.Paths
 import scala.annotation.nowarn
+import jsonrpclib.smithy4sinterop.CirceJsonCodec
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
@@ -142,7 +142,7 @@ object BSPCodecsTest extends FunSuite {
     val jvm: Option[String] = bt.javaVersion
   }
 
-  private def codecFor[A: Schema]: Codec[A] = Hack.schemaToCodec[A](
+  private def codecFor[A: Schema]: Codec[A] = CirceJsonCodec.fromSchema[A](
     using Schema[A].transformTransitivelyK(BSPCodecs.bspTransformations)
   )
 
