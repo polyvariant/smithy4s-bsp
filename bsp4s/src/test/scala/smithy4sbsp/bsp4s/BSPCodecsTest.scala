@@ -31,6 +31,7 @@ package smithy4sbsp.bsp4s
  * limitations under the License.
  */
 
+import cats.syntax.all.*
 import bsp.BuildTargetTestInput
 import bsp.BuildTarget
 import bsp.BuildTargetCapabilities
@@ -64,6 +65,7 @@ import bsp.scala_.ScalaTextEdit
 import bsp.Diagnostic
 import jsonrpclib.smithy4sinterop.CirceJsonCodec
 import bsp.scala_.ScalaTestParams
+import smithy4s.Document
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
@@ -258,7 +260,7 @@ object BSPCodecsTest extends FunSuite {
     )
   }
 
-  test("Diagnostic (real sample from bloo)") {
+  test("Diagnostic (real sample from bloop)") {
     val encoded =
       json"""{
         "textDocument": {
@@ -293,7 +295,7 @@ object BSPCodecsTest extends FunSuite {
         uri = URI("file:/Users/kubukoz/projects/smithy-playground/modules/ast/?id=ast")
       ),
       diagnostics = List(
-        Diagnostic.diagnosticScalaDiagnostic(
+        Diagnostic.diagnosticOther(
           range = bsp.Range(
             start = bsp.Position(bsp.Integer(183), bsp.Integer(24)),
             end = bsp.Position(bsp.Integer(183), bsp.Integer(24)),
@@ -302,9 +304,12 @@ object BSPCodecsTest extends FunSuite {
           code = Some(DiagnosticCode.string("198")),
           source = Some("bloop"),
           message = "unused implicit parameter",
-          data = ScalaDiagnostic(
-            actions = Some(Nil)
-          ),
+          data =
+            Document
+              .obj(
+                "actions" -> Document.array()
+              )
+              .some,
         )
       ),
       reset = false,
@@ -324,7 +329,7 @@ object BSPCodecsTest extends FunSuite {
   }
 
   private def codecFor[A: Schema]: Codec[A] = CirceJsonCodec.fromSchema[A](
-    using Schema[A].transformTransitivelyK(BSPCodecs.bspTransformations)
+    using BSPCodecs.bspTransformations(Schema[A])
   )
 
   private def roundtripTest[A: Schema](
