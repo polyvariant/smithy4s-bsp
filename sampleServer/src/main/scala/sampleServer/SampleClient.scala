@@ -72,16 +72,16 @@ object SampleClient extends IOApp.Simple {
         socket
           .reads
           // make sure to not use stdout in LSPs :)
-          .observe(fs2.io.stdout[IO])
+          .observe(_.through(fs2.text.utf8.decode[IO]).debug("[received from  server] " + _).drain)
           .through(jsonrpclib.fs2.lsp.decodeMessages)
           .through(chan.inputOrBounce)
       )
       .concurrently(
         chan
           .output
-          // make sure to not use stdout in LSPs :)
           .through(jsonrpclib.fs2.lsp.encodeMessages)
-          .observe(fs2.io.stdout[IO])
+          // make sure to not use stdout in LSPs :)
+          .observe(_.through(fs2.text.utf8.decode[IO]).debug("[sending to server] " + _).drain)
           .through(socket.writes)
       )
       .compile
@@ -97,18 +97,20 @@ object SampleClient extends IOApp.Simple {
 
       socket <- connectTo(socketFile)
       chan <- FS2Channel.resource[IO]()
+      bloop = Bloop(
+        BSPCodecs.clientStub(BuildServer, chan),
+        BSPCodecs.clientStub(ScalaBuildServer, chan),
+      )
+
       handler = bspClientHandler()
       _ <- chan.withEndpoints(BSPCodecs.serverEndpoints(handler))
       _ <- bindStreams(socket, chan)
-    } yield Bloop(
-      BSPCodecs.clientStub(BuildServer, chan),
-      BSPCodecs.clientStub(ScalaBuildServer, chan),
-    )
+    } yield bloop
 
   def bspClientHandler(): BuildClient[IO] =
     new BuildClient[IO] {
       // make sure to not use stdout in LSPs :)
-      private def notify(msg: String) = IO.println(msg)
+      private def notify(msg: String) = IO.println(s"[in bspClientHandler] $msg")
 
       def onBuildLogMessage(input: LogMessageParams): IO[Unit] = notify(
         s"handling onBuildLogMessage: $input"
@@ -148,8 +150,8 @@ object SampleClient extends IOApp.Simple {
     }
 
   def run: IO[Unit] = mkBloopClient.use { bloop =>
-    bloop
-      .bs
+    val bs = bloop.bs
+    bs
       .buildInitialize(
         InitializeBuildParams(
           displayName = "hello",
@@ -162,20 +164,17 @@ object SampleClient extends IOApp.Simple {
         )
       )
       .flatMap(IO.println) *>
-      bloop.bs.onBuildInitialized() *>
-      bloop.bs.workspaceBuildTargets().flatMap(IO.println) *>
-      bloop
-        .bs
-        .buildTargetSources(
-          SourcesParams(targets =
-            List(
-              BuildTargetIdentifier(
-                URI("file:/Users/kubukoz/projects/smithy-playground/modules/lsp2/?id=lsp2")
-              )
+      bs.onBuildInitialized() *>
+      bs.workspaceBuildTargets().flatMap(IO.println) *>
+      bs.buildTargetSources(
+        SourcesParams(targets =
+          List(
+            BuildTargetIdentifier(
+              URI("file:/Users/kubukoz/projects/smithy-playground/modules/lsp2/?id=lsp2")
             )
           )
         )
-        .flatMap(IO.println)
+      ).flatMap(IO.println)
 
   }
 
