@@ -38,6 +38,7 @@ import java.nio.file.Paths
 import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.shapes.AbstractShapeBuilder
 import smithy4s.meta.AdtTrait
+import software.amazon.smithy.model.traits.InputTrait
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -282,17 +283,20 @@ class TransformBuildTargetData extends ProjectionTransformer {
     : StructureShape = StructureShape
     .builder()
     .id(ShapeId.fromParts(op.getId().getNamespace(), op.getId().getName() + suffix))
-    .addMember(
-      "data",
-      wraps,
-      _.addTrait(new RequiredTrait())
-        .addTrait(
-          new DynamicTrait(
-            ShapeId.from("smithy4sbsp.meta#rpcPayload"),
-            Node.objectNode(),
-          )
-        ),
+    .tap(
+      _.addMember(
+        "data",
+        wraps,
+        _.addTrait(new RequiredTrait())
+          .addTrait(
+            new DynamicTrait(
+              ShapeId.from("smithy4sbsp.meta#rpcPayload"),
+              Node.objectNode(),
+            )
+          ),
+      )
     )
+    .tap(_.addTrait(new InputTrait()))
     .build()
 
   private def optionalToOption[T](o: java.util.Optional[T]): Option[T] =
@@ -325,6 +329,16 @@ class TransformBuildTargetData extends ProjectionTransformer {
         .asScala
         .foreach { case (k, v) => Files.write(k, v.getBytes()) }
     }
+  }
+
+  // scala.util.chaining for 2.12
+  final implicit class ChainingOps[A](private val a: A) {
+
+    def tap[B](f: A => B): A = {
+      f(a)
+      a
+    }
+
   }
 
 }
