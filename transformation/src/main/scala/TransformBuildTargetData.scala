@@ -347,16 +347,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
     else
       None
 
-  private def expectDataKind(s: Shape): DataKindTrait = {
-    val trt = Option(
-      s.getAllTraits().get(DataKindTrait.ID)
-    ).getOrElse(sys.error(s"Expected $s to have a DataKind trait, but it doesn't"))
-
-    new DataKindTrait.Provider().createTrait(
-      trt.toShapeId(),
-      trt.toNode(),
-    )
-  }
+  private def expectDataKind(s: Shape): DataKindTrait = s.expectTrait(classOf[DataKindTrait])
 
   // for debugging modified smithy
   private def dump(m: Model): Unit = {
