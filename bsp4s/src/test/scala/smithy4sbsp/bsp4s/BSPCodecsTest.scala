@@ -46,7 +46,6 @@ import bsp.scala_.ScalaBuildTarget
 import bsp.scala_.ScalaPlatform
 import cats.effect.IO
 import io.circe.*
-import io.circe.Codec
 import io.circe.literal.*
 import smithy4s.schema.Schema
 import weaver.*
@@ -63,9 +62,14 @@ import bsp.scala_.ScalaAction
 import bsp.scala_.ScalaWorkspaceEdit
 import bsp.scala_.ScalaTextEdit
 import bsp.Diagnostic
-import jsonrpclib.smithy4sinterop.CirceJsonCodec
 import bsp.scala_.ScalaTestParams
 import smithy4s.Document
+import smithy4s.Document.DNull
+import smithy4s.Document.DString
+import smithy4s.Document.DBoolean
+import smithy4s.Document.DNumber
+import smithy4s.Document.DArray
+import smithy4s.Document.DObject
 
 object BSPCodecsTest extends FunSuite {
   test("BuildTargetTestInput") {
@@ -328,9 +332,10 @@ object BSPCodecsTest extends FunSuite {
     val jvm: Option[String] = bt.javaVersion
   }
 
-  private def codecFor[A: Schema]: Codec[A] = CirceJsonCodec.fromSchema[A](
-    using BSPCodecs.bspTransformations(Schema[A])
-  )
+  private def codecFor[A: Schema]: (Document.Encoder[A], Document.Decoder[A]) = {
+    val schema = BSPCodecs.bspTransformations(Schema[A])
+    (Document.Encoder.fromSchema(schema), Document.Decoder.fromSchema(schema))
+  }
 
   private def roundtripTest[A: Schema](
     a: A,
@@ -338,16 +343,25 @@ object BSPCodecsTest extends FunSuite {
   )(
     using SourceLocation
   ): Expectations = {
-    val c = codecFor[A]
+    val (encoder, decoder) = codecFor[A]
 
-    val encoded2 = c.apply(a)
+    val result = encoder.encode(a)
 
-    val result = encoded2
+    val resultAsJson = documentToJson(result)
 
-    val decoded = c.decodeJson(encoded2)
+    val decoded = decoder.decode(result)
 
-    assert.same(result, encoded) &&
+    assert.same(resultAsJson, encoded) &&
     assert.same(Right(a), decoded)
+  }
+
+  private val documentToJson: Document => Json = {
+    case DNull            => Json.Null
+    case DString(value)   => Json.fromString(value)
+    case DBoolean(value)  => Json.fromBoolean(value)
+    case DNumber(value)   => Json.fromBigDecimal(value)
+    case DArray(values)   => Json.fromValues(values.map(documentToJson))
+    case DObject(entries) => Json.fromFields(entries.view.mapValues(documentToJson))
   }
 
 }
