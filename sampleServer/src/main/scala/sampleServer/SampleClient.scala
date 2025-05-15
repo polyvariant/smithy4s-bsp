@@ -76,9 +76,7 @@ object SampleClient extends IOApp.Simple {
 
         proc
           .stdout
-          .observe(
-            waitForStart
-          )
+          .observe(waitForStart)
           .merge(proc.stderr)
           .through(fs2.text.utf8.decode)
           .through(fs2.text.lines)
@@ -86,38 +84,40 @@ object SampleClient extends IOApp.Simple {
           .compile
           .drain
           .background
-          // wait for the started message before proceeding
-          .evalTap(_ => started.get)
+        // wait for the started message before proceeding
+          <* started.get.toResource
       }
     }
 
-  def connectTo(socketFile: Path) = UnixSockets
+  def connectTo(socketFile: Path): Resource[IO, Socket[IO]] = UnixSockets
     .forAsync[IO]
     .client(UnixSocketAddress(socketFile.toNioPath))
 
-  def bindStreams(socket: Socket[IO], chan: FS2Channel[IO]) =
+  def bindStreams(socket: Socket[IO], chan: FS2Channel[IO]) = {
+    val receive = socket
+      .reads
+      // make sure to not use stdout in LSPs :)
+      .observe(_.through(fs2.text.utf8.decode[IO]).debug("[received from server] " + _).drain)
+      .through(jsonrpclib.fs2.lsp.decodeMessages)
+      .through(chan.inputOrBounce)
+
+    val send = chan
+      .output
+      .through(jsonrpclib.fs2.lsp.encodeMessages)
+      // make sure to not use stdout in LSPs :)
+      .observe(_.through(fs2.text.utf8.decode[IO]).debug("[sending to server] " + _).drain)
+      .through(socket.writes)
+
     fs2
-      .Stream
-      .never[IO]
-      .concurrently(
-        socket
-          .reads
-          // make sure to not use stdout in LSPs :)
-          .observe(_.through(fs2.text.utf8.decode[IO]).debug("[received from  server] " + _).drain)
-          .through(jsonrpclib.fs2.lsp.decodeMessages)
-          .through(chan.inputOrBounce)
+      .Stream(
+        receive,
+        send,
       )
-      .concurrently(
-        chan
-          .output
-          .through(jsonrpclib.fs2.lsp.encodeMessages)
-          // make sure to not use stdout in LSPs :)
-          .observe(_.through(fs2.text.utf8.decode[IO]).debug("[sending to server] " + _).drain)
-          .through(socket.writes)
-      )
+      .parJoinUnbounded
       .compile
       .drain
       .background
+  }
 
   val mkBloopClient: Resource[IO, Bloop] =
     for {
