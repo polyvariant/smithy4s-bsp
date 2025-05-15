@@ -29,6 +29,10 @@ object TransformBuildTargetDataTest extends FunSuite {
     transformationComparisonTest(os.sub / "sampleDataTraits")
   }
 
+  test("Sample transformation in operation input") {
+    transformationComparisonTest(os.sub / "sampleDataTraitsInput")
+  }
+
   test("Multiple datas using the same dataKind") {
     transformationComparisonTest(os.sub / "multiDataTraits")
   }
