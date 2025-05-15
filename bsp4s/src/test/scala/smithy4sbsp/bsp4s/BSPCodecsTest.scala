@@ -31,7 +31,7 @@ package smithy4sbsp.bsp4s
  * limitations under the License.
  */
 
-import BuildTargetTest.BuildTargetTestInput
+import bsp.BuildTargetTestInput
 import bsp.BuildTarget
 import bsp.BuildTargetCapabilities
 import bsp.BuildTargetIdentifier
