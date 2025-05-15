@@ -23,6 +23,9 @@ import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.loader.ModelAssembler
 import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
 import java.nio.file.Paths
+import software.amazon.smithy.model.loader.IdlTokenizer
+import software.amazon.smithy.syntax.TokenTree
+import software.amazon.smithy.syntax
 
 object TransformBuildTargetDataTest extends FunSuite {
   test("Sample transformation of data") {
@@ -88,7 +91,7 @@ object TransformBuildTargetDataTest extends FunSuite {
   private def format(string: String): String = {
 
     val tokenizer = IdlTokenizer.create(string)
-    val tree = syntax.TokenTree.of(tokenizer)
+    val tree = TokenTree.of(tokenizer)
 
     syntax.Formatter.format(tree)
   }
