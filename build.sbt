@@ -87,6 +87,7 @@ lazy val bsp4s = project
 
 lazy val sampleServer = project
   .settings(
+    fork := true,
     commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+29-89c3de6d-SNAPSHOT",
