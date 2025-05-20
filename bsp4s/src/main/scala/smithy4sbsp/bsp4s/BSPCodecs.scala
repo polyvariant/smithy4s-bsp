@@ -16,18 +16,28 @@
 
 package smithy4sbsp.bsp4s
 
+import alloy.Discriminated
 import jsonrpclib.Channel
 import jsonrpclib.Monadic
 import jsonrpclib.smithy4sinterop.ClientStub
 import jsonrpclib.smithy4sinterop.ServerEndpoints
+import smithy.api.JsonName
+import smithy4s.Document
+import smithy4s.Document.DObject
 import smithy4s.Endpoint
+import smithy4s.Refinement
 import smithy4s.Service
+import smithy4s.ShapeTag
 import smithy4s.kinds.FunctorAlgebra
 import smithy4s.schema.OperationSchema
 import smithy4s.schema.Schema
 import smithy4s.schema.Schema.StructSchema
+import smithy4s.schema.Schema.UnionSchema
 import smithy4s.~>
+import smithy4sbsp.meta.DataDefault
 import smithy4sbsp.meta.RpcPayload
+
+import util.chaining.*
 
 object BSPCodecs {
 
@@ -51,19 +61,13 @@ object BSPCodecs {
       .mapEndpointEach(
         Endpoint.mapSchema(
           OperationSchema
-            .mapInputK(
-              Schema.transformTransitivelyK(bspTransformations)
-            )
-            .andThen(
-              OperationSchema.mapOutputK(
-                Schema.transformTransitivelyK(bspTransformations)
-              )
-            )
+            .mapInputK(bspTransformations)
+            .andThen(OperationSchema.mapOutputK(bspTransformations))
         )
       )
       .build
 
-  private[bsp4s] val bspTransformations: Schema ~> Schema =
+  private val flattenRpcPayload: Schema ~> Schema =
     new (Schema ~> Schema) {
       def apply[A0](fa: Schema[A0]): Schema[A0] =
         fa match {
@@ -78,5 +82,89 @@ object BSPCodecs {
           case _ => fa
         }
     }
+
+  // war crimes inside
+  private val addDataDefault: Schema ~> Schema =
+    new (Schema ~> Schema) {
+      def apply[A0](fa: Schema[A0]): Schema[A0] =
+        fa match {
+          case UnionSchema(shapeId, hints, alternatives, ordinal)
+              if alternatives.exists(_.hints.has[DataDefault]) =>
+            val altWithDefault =
+              alternatives
+                .find(_.hints.has[DataDefault])
+                .get // we know it's there because of the guard
+
+            val discriminatorTag = hints
+              .get[Discriminated]
+              .getOrElse(
+                sys.error(
+                  "Discriminated is not set on the union. This is a bug in the code generation."
+                )
+              )
+
+            val altJsonName = altWithDefault
+              .hints
+              .get[JsonName]
+              .map(_.value)
+              .getOrElse(altWithDefault.label)
+
+            val discriminatorValue = Document.fromString(altJsonName)
+
+            def decode(doc: Map[String, Document]) =
+              doc
+                .get(discriminatorTag.value)
+                .match {
+                  case Some(_) =>
+                    // discriminator is there, we decode normally
+                    doc
+                  case None =>
+                    // no discriminator. We have to add the "default" one so that the union decoder cam pick it up
+                    doc + (discriminatorTag.value -> discriminatorValue)
+                }
+                .pipe(Document.obj(_))
+                .decode(
+                  using Document.Decoder.fromSchema(fa)
+                )
+                .left
+                .map(_.getMessage)
+
+            def encode(b: A0): Map[String, Document] =
+              Document.Encoder.fromSchema(fa).encode(b) match {
+                case DObject(value) if value(discriminatorTag.value) == discriminatorValue =>
+                  value - discriminatorTag.value
+                case other @ DObject(keys) => keys
+                case other                 => sys.error("Expected DObject but got: " + other)
+              }
+
+            val decodeRefin =
+              new Refinement[Map[String, Document], A0] {
+                type Constraint = Unit
+                val tag: ShapeTag[Unit] =
+                  new ShapeTag[Unit] {
+                    def id: smithy4s.ShapeId = smithy4s.ShapeId("smithy.api", "Unit")
+                    def schema: Schema[Unit] = Schema.unit
+                  }
+
+                def apply(a: Map[String, Document]): Either[String, A0] = decode(a)
+                def from(b: A0): Map[String, Document] = encode(b)
+
+                def constraint: Constraint = ()
+                def unsafe(a: Map[String, Document]): A0 = apply(a).fold(sys.error, identity)
+              }
+
+            Schema
+              .map(Schema.string, Schema.document)
+              .withId(shapeId)
+              .refined[A0]
+              .apply(decodeRefin)
+
+          case _ => fa
+        }
+    }
+
+  private[bsp4s] val bspTransformations: Schema ~> Schema = Schema
+    .transformTransitivelyK(flattenRpcPayload)
+    .andThen(Schema.transformTransitivelyK(addDataDefault))
 
 }

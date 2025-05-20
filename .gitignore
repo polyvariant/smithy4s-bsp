@@ -6,3 +6,5 @@
 node_modules/
 .smithy.lsp.log
 build/smithy
+transformed
+**/test/**/actual.smithy

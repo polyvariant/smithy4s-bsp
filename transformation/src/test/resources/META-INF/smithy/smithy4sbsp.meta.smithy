@@ -1,0 +1,1 @@
+../../../../../../codegen/src/main/smithy/smithy4sbsp.meta.smithy

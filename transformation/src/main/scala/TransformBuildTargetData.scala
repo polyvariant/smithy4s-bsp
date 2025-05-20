@@ -38,6 +38,8 @@ import java.nio.file.Paths
 import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.shapes.AbstractShapeBuilder
 import smithy4s.meta.AdtTrait
+import software.amazon.smithy.model.traits.InputTrait
+import software.amazon.smithy.model.loader.Prelude
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -74,6 +76,8 @@ class TransformBuildTargetData extends ProjectionTransformer {
     val transformed = mb.build()
 
     dump(transformed)
+    // todo: test for @data without any kinds
+    // todo: what to do when data is optional and missing?
 
     transformed
   }
@@ -143,6 +147,21 @@ class TransformBuildTargetData extends ProjectionTransformer {
       )
     }
 
+    if (!baseDataMember.isRequired()) {
+      val otherTarget = makeOtherUnionTarget(parent.getId(), List(mixinForMembers))
+
+      mb.addShape(otherTarget)
+
+      unionBuilder.addMember(
+        "other",
+        otherTarget.getId(),
+        _.addTrait(new JsonNameTrait("other"))
+          .addTrait(
+            new DynamicTrait(ShapeId.from("smithy4sbsp.meta#dataDefault"), Node.objectNode())
+          ),
+      )
+    }
+
     val u = unionBuilder.build()
     mb.addShape(u)
 
@@ -150,7 +169,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
   }
 
   // Creates a new structure shape that will become a target of the new union. For example, ScalaBuildTarget.
-  // It will have all the BuildTarget fields (due to the mixin), and a `data: ScalaBuildTargetData`` field.
+  // It will have all the BuildTarget fields (due to the mixin), and a `data: ScalaBuildTargetData` field.
   // returns the union target's `data` field target, and the union target itself.
   private def makeNewUnionTarget(
     unionName: ShapeId,
@@ -183,7 +202,9 @@ class TransformBuildTargetData extends ProjectionTransformer {
     newStructBuilder.addMember(
       baseDataMember.getMemberName(),
       newDataStruct.getId(),
-      _.addTraits(baseDataMember.getIntroducedTraits().values()),
+      _.addTraits(baseDataMember.getIntroducedTraits().values())
+        // We add the trait no matter if it was there. If it wasn't there, there's gonna be a separate union case that handles that
+        .addTrait(new RequiredTrait()),
     )
 
     val newStruct = newStructBuilder.build()
@@ -192,6 +213,30 @@ class TransformBuildTargetData extends ProjectionTransformer {
       newDataStruct,
       newStruct,
     )
+  }
+
+  private def makeOtherUnionTarget(
+    unionName: ShapeId,
+    mixins: List[Shape],
+  ): Shape = {
+    // like makeNewUnionTarget, but the new member only has an optional `data: Document` field.
+    // This is supposed to help if the dataKind is missing (after a runtime transformation).
+
+    val newStructBuilder = StructureShape
+      .builder()
+      .id {
+        val base = unionName
+        val newName = base.getName() + "Other"
+        ShapeId.fromParts(base.getNamespace(), newName)
+      }
+      .addMember(
+        "data",
+        ShapeId.fromParts(Prelude.NAMESPACE, "Document"),
+      )
+
+    newStructBuilder
+      .mixins(mixins.asJava)
+      .build()
   }
 
   // Removes the dataKind trait from the data struct.
@@ -279,18 +324,21 @@ class TransformBuildTargetData extends ProjectionTransformer {
   private def makeRpcPayloadWrapper(op: OperationShape, wraps: ShapeId, suffix: String)
     : StructureShape = StructureShape
     .builder()
-    .id(ShapeId.fromParts(op.getId().getName(), op.getId().getName() + suffix))
-    .addMember(
-      "data",
-      wraps,
-      _.addTrait(new RequiredTrait())
-        .addTrait(
-          new DynamicTrait(
-            ShapeId.from("smithy4sbsp.meta#rpcPayload"),
-            Node.objectNode(),
-          )
-        ),
+    .id(ShapeId.fromParts(op.getId().getNamespace(), op.getId().getName() + suffix))
+    .tap(
+      _.addMember(
+        "data",
+        wraps,
+        _.addTrait(new RequiredTrait())
+          .addTrait(
+            new DynamicTrait(
+              ShapeId.from("smithy4sbsp.meta#rpcPayload"),
+              Node.objectNode(),
+            )
+          ),
+      )
     )
+    .tap(_.addTrait(new InputTrait()))
     .build()
 
   private def optionalToOption[T](o: java.util.Optional[T]): Option[T] =
@@ -314,6 +362,16 @@ class TransformBuildTargetData extends ProjectionTransformer {
         .asScala
         .foreach { case (k, v) => Files.write(k, v.getBytes()) }
     }
+  }
+
+  // scala.util.chaining for 2.12
+  final implicit class ChainingOps[A](private val a: A) {
+
+    def tap[B](f: A => B): A = {
+      f(a)
+      a
+    }
+
   }
 
 }
