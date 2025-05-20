@@ -15,27 +15,17 @@
  */
 
 import bsp.traits.SetTrait
+import common.TransformationUtils.*
 import software.amazon.smithy.build.ProjectionTransformer
 import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.traits.Trait
 import software.amazon.smithy.model.traits.UniqueItemsTrait
-import software.amazon.smithy.model.transform.ModelTransformer
-
-import java.util.function.BiFunction
 
 class SetShapes extends ProjectionTransformer {
   def getName(): String = "set-shapes"
 
-  def transform(context: TransformContext): Model = ModelTransformer
-    .create()
-    .mapTraits(
-      context.getModel(),
-      {
-        case (_, _: SetTrait) => new UniqueItemsTrait()
-        case (_, trt)         => trt
-      }: BiFunction[Shape, Trait, Trait],
-    )
+  def transform(context: TransformContext): Model = context.getModel.mapSomeTraits {
+    case (_, _: SetTrait) => new UniqueItemsTrait()
+  }
 
 }

@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
+import common.TransformationUtils.*
 import software.amazon.smithy.build.ProjectionTransformer
 import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.transform.ModelTransformer
-import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.traits.Trait
 
 class UntaggedUnions extends ProjectionTransformer {
   def getName(): String = "untagged-unions"
 
-  def transform(context: TransformContext): Model = ModelTransformer
-    .create()
-    .mapTraits(
-      context.getModel(),
-      {
-        case (_, _: bsp.traits.UntaggedUnionTrait) => new alloy.UntaggedUnionTrait()
-        case (_, trt)                              => trt
-      }: java.util.function.BiFunction[Shape, Trait, Trait],
-    )
+  def transform(context: TransformContext): Model = context.getModel().mapSomeTraits {
+    case (_, _: bsp.traits.UntaggedUnionTrait) => new alloy.UntaggedUnionTrait()
+  }
 
 }

@@ -14,40 +14,25 @@
  * limitations under the License.
  */
 
+import bsp.traits.JsonNotificationTrait
+import bsp.traits.JsonRPCTrait
+import bsp.traits.JsonRequestTrait
+import common.TransformationUtils.*
 import software.amazon.smithy.build.ProjectionTransformer
 import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.transform.ModelTransformer
-import bsp.traits.JsonNotificationTrait
-import bsp.traits.JsonRequestTrait
-import bsp.traits.JsonRPCTrait
-import java.util.function.BiFunction
-import scala.collection.JavaConverters.*
-import software.amazon.smithy.model.traits.Trait
-import software.amazon.smithy.model.shapes.Shape
 
 class TransformJsonRpcTraits extends ProjectionTransformer {
   def getName(): String = "transform-jsonrpclib-traits"
 
-  def transform(context: TransformContext): Model = ModelTransformer
-    .create()
-    .mapTraits(
-      context.getModel(),
-      List[BiFunction[Shape, Trait, Trait]](
-        {
-          case (_, _: JsonRPCTrait) => jsonrpclib.JsonRPCTrait.builder().build()
-          case (_, trt)             => trt
-        },
-        {
-          case (_, trt: JsonNotificationTrait) =>
-            new jsonrpclib.JsonNotificationTrait(trt.getValue())
-          case (_, trt) => trt
-        },
-        {
-          case (_, trt: JsonRequestTrait) => new jsonrpclib.JsonRequestTrait(trt.getValue())
-          case (_, trt)                   => trt
-        },
-      ).asJava,
+  def transform(context: TransformContext): Model = context
+    .getModel()
+    .mapSomeTraits(
+      { case (_, _: JsonRPCTrait) => jsonrpclib.JsonRPCTrait.builder().build() },
+      { case (_, trt: JsonNotificationTrait) =>
+        new jsonrpclib.JsonNotificationTrait(trt.getValue())
+      },
+      { case (_, trt: JsonRequestTrait) => new jsonrpclib.JsonRequestTrait(trt.getValue()) },
     )
 
 }
