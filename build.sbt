@@ -11,7 +11,7 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.StartsWith(Ref.Tag("v")),
 )
 
-ThisBuild / scalaVersion := "3.3.5"
+ThisBuild / scalaVersion := "3.3.6"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
 ThisBuild / tlCiDependencyGraphJob := false
