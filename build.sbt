@@ -4,18 +4,19 @@ ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
 ThisBuild / licenses := Seq(License.Apache2)
 ThisBuild / developers := List(tlGitHubDev("kubukoz", "Jakub Kozłowski"))
-ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatype01
 
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("main")),
   RefPredicate.StartsWith(Ref.Tag("v")),
 )
 
-ThisBuild / scalaVersion := "3.3.5"
+ThisBuild / scalaVersion := "3.3.6"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
 ThisBuild / tlCiDependencyGraphJob := false
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
+
+ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
@@ -31,7 +32,7 @@ val commonSettings = Seq(
       Nil
   },
   libraryDependencies ++= Seq(
-    "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test
+    "org.typelevel" %%% "weaver-cats" % "0.9.0" % Test
   ),
 )
 
@@ -40,14 +41,14 @@ lazy val transformation = project
     commonSettings,
     scalaVersion := "2.12.20",
     libraryDependencies ++= Seq(
-      "software.amazon.smithy" % "smithy-build" % "1.57.1",
-      "software.amazon.smithy" % "smithy-syntax" % "1.57.1",
+      "software.amazon.smithy" % "smithy-build" % "1.58.0",
+      "software.amazon.smithy" % "smithy-syntax" % "1.58.0",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % "0.0.8+44-ea0af08a-SNAPSHOT",
-      "com.disneystreaming.alloy" % "alloy-core" % "0.3.19",
+      "com.disneystreaming.alloy" % "alloy-core" % "0.3.20",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
-      "software.amazon.smithy" % "smithy-diff" % "1.57.1" % Test,
+      "software.amazon.smithy" % "smithy-diff" % "1.58.0" % Test,
     ),
     publish / skip := true,
     mimaPreviousArtifacts := Set.empty,
@@ -95,7 +96,7 @@ lazy val sampleServer = project
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+44-ea0af08a-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
-      "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
+      "org.typelevel" %%% "weaver-cats" % "0.9.0" % Test,
     ),
     name := "sample-server",
     mimaPreviousArtifacts := Set.empty,
@@ -106,7 +107,4 @@ lazy val sampleServer = project
 lazy val root = project
   .in(file("."))
   .aggregate(bsp4s, sampleServer, codegen, transformation)
-  .settings(
-    sonatypeProfileName := "org.polyvariant"
-  )
   .enablePlugins(NoPublishPlugin)

@@ -351,8 +351,8 @@ object BSPCodecsTest extends FunSuite {
 
     val decoded = decoder.decode(result)
 
-    assert.same(resultAsJson, encoded) &&
-    assert.same(Right(a), decoded)
+    expect.same(resultAsJson, encoded) &&
+    expect.same(Right(a), decoded)
   }
 
   private val documentToJson: Document => Json = {

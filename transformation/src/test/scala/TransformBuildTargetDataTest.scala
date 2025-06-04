@@ -89,7 +89,7 @@ object TransformBuildTargetDataTest extends FunSuite {
     } else
       os.remove(actualFile)
 
-    assert(diff.isEmpty, diff.map(_.toString()).mkString("\n"))
+    expect(diff.isEmpty, diff.map(_.toString()).mkString("\n"))
   }
 
   private def format(string: String): String = {
