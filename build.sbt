@@ -38,7 +38,7 @@ val commonSettings = Seq(
 lazy val transformation = project
   .settings(
     commonSettings,
-    scalaVersion := "2.12.20",
+    scalaVersion := "2.13.16",
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.57.1",
       "software.amazon.smithy" % "smithy-syntax" % "1.57.1",
