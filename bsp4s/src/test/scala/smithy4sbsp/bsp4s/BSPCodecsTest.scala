@@ -72,7 +72,7 @@ import smithy4s.Document.DArray
 import smithy4s.Document.DObject
 
 object BSPCodecsTest extends FunSuite {
-  test("BuildTargetTestInput".only) {
+  test("BuildTargetTestInput") {
     val input = BuildTargetTestInput(
       data = TestParams.testParamsScalaTestParams(
         targets = Nil,
