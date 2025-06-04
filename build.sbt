@@ -4,7 +4,6 @@ ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
 ThisBuild / licenses := Seq(License.Apache2)
 ThisBuild / developers := List(tlGitHubDev("kubukoz", "Jakub Kozłowski"))
-ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatype01
 
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("main")),
@@ -106,7 +105,4 @@ lazy val sampleServer = project
 lazy val root = project
   .in(file("."))
   .aggregate(bsp4s, sampleServer, codegen, transformation)
-  .settings(
-    sonatypeProfileName := "org.polyvariant"
-  )
   .enablePlugins(NoPublishPlugin)
