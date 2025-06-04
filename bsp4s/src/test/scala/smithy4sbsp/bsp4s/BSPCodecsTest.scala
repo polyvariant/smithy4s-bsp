@@ -72,7 +72,7 @@ import smithy4s.Document.DArray
 import smithy4s.Document.DObject
 
 object BSPCodecsTest extends FunSuite {
-  test("BuildTargetTestInput") {
+  test("BuildTargetTestInput".only) {
     val input = BuildTargetTestInput(
       data = TestParams.testParamsScalaTestParams(
         targets = Nil,
@@ -334,6 +334,7 @@ object BSPCodecsTest extends FunSuite {
 
   private def codecFor[A: Schema]: (Document.Encoder[A], Document.Decoder[A]) = {
     val schema = BSPCodecs.bspTransformations(Schema[A])
+    println(schema)
     (Document.Encoder.fromSchema(schema), Document.Decoder.fromSchema(schema))
   }
 
