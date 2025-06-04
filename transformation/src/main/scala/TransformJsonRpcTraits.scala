@@ -28,11 +28,11 @@ class TransformJsonRpcTraits extends ProjectionTransformer {
   def transform(context: TransformContext): Model = context
     .getModel()
     .mapSomeTraits(
-      { case (_, _: JsonRPCTrait) => jsonrpclib.JsonRPCTrait.builder().build() },
+      { case (_, _: JsonRPCTrait) => jsonrpclib.JsonRpcTrait.builder().build() },
       { case (_, trt: JsonNotificationTrait) =>
-        new jsonrpclib.JsonNotificationTrait(trt.getValue())
+        new jsonrpclib.JsonRpcNotificationTrait(trt.getValue())
       },
-      { case (_, trt: JsonRequestTrait) => new jsonrpclib.JsonRequestTrait(trt.getValue()) },
+      { case (_, trt: JsonRequestTrait) => new jsonrpclib.JsonRpcRequestTrait(trt.getValue()) },
     )
 
 }
