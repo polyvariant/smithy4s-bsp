@@ -106,3 +106,7 @@ lazy val root = project
   .in(file("."))
   .aggregate(bsp4s, sampleServer, codegen, transformation)
   .enablePlugins(NoPublishPlugin)
+  .enablePlugins(MergifyPlugin)
+  .settings(
+    mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
+  )
