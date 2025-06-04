@@ -16,6 +16,8 @@ ThisBuild / tlFatalWarnings := false
 ThisBuild / tlCiDependencyGraphJob := false
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
+ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
+
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
   scalacOptions ++= {
@@ -106,7 +108,3 @@ lazy val root = project
   .in(file("."))
   .aggregate(bsp4s, sampleServer, codegen, transformation)
   .enablePlugins(NoPublishPlugin)
-  .enablePlugins(MergifyPlugin)
-  .settings(
-    mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
-  )
