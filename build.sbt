@@ -87,7 +87,7 @@ lazy val bsp4s = project
   )
   .dependsOn(codegen)
 
-lazy val sampleServer = project
+lazy val examples = project
   .settings(
     fork := true,
     commonSettings,
@@ -106,5 +106,5 @@ lazy val sampleServer = project
 
 lazy val root = project
   .in(file("."))
-  .aggregate(bsp4s, sampleServer, codegen, transformation)
+  .aggregate(bsp4s, examples, codegen, transformation)
   .enablePlugins(NoPublishPlugin)
