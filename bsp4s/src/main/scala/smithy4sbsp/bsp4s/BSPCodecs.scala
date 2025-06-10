@@ -35,9 +35,9 @@ import smithy4s.schema.Schema.StructSchema
 import smithy4s.schema.Schema.UnionSchema
 import smithy4s.~>
 import smithy4sbsp.meta.DataDefault
-import smithy4sbsp.meta.RpcPayload
 
 import util.chaining.*
+import jsonrpclib.JsonRpcPayload
 
 object BSPCodecs {
 
@@ -67,6 +67,9 @@ object BSPCodecs {
       )
       .build
 
+  // todo: reconcile this with the one from jsonrpclib.
+  // we can't atm, because this one has to run before addDataDefault. Otherwise, if we run addDataDefault,
+  // the struct schema is gone (it gets turned into a Document Decoder wrapped in a refinement).
   private val flattenRpcPayload: Schema ~> Schema =
     new (Schema ~> Schema) {
       def apply[A0](fa: Schema[A0]): Schema[A0] =
@@ -75,7 +78,7 @@ object BSPCodecs {
             struct
               .fields
               .collectFirst {
-                case field if field.hints.has[RpcPayload] =>
+                case field if field.hints.has[JsonRpcPayload] =>
                   field.schema.biject[b](f => struct.make(Vector(f)))(field.get)
               }
               .getOrElse(fa)
