@@ -70,6 +70,7 @@ lazy val codegen = project
       "open-enums",
       "transform-build-target-data",
       "transform-jsonrpclib-traits",
+      "add-http",
       "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
@@ -81,8 +82,8 @@ lazy val bsp4s = project
     commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+49-7dd4ecdb-SNAPSHOT",
-      "io.circe" %%% "circe-parser" % "0.14.13",
-      "io.circe" %%% "circe-literal" % "0.14.13",
+      "io.circe" %%% "circe-parser" % "0.14.14",
+      "io.circe" %%% "circe-literal" % "0.14.14",
     ),
   )
   .dependsOn(codegen)
