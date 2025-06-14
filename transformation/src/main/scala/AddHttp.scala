@@ -6,10 +6,10 @@ import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.shapes.ServiceShape
 import scala.collection.JavaConverters.*
 import software.amazon.smithy.model.traits.HttpTrait
-import jsonrpclib.JsonNotificationTrait
 import software.amazon.smithy.model.pattern.UriPattern
 import alloy.SimpleRestJsonTrait
-import jsonrpclib.JsonRequestTrait
+import jsonrpclib.JsonRpcNotificationTrait
+import jsonrpclib.JsonRpcRequestTrait
 
 class AddHttp extends ProjectionTransformer {
   def getName(): String = "add-http"
@@ -36,10 +36,10 @@ class AddHttp extends ProjectionTransformer {
               .method("POST")
               .uri(
                 UriPattern.parse {
-                  s.getTrait(classOf[JsonNotificationTrait])
+                  s.getTrait(classOf[JsonRpcNotificationTrait])
                     .map[String]("/" + _.getValue())
                     .or(() =>
-                      s.getTrait(classOf[JsonRequestTrait])
+                      s.getTrait(classOf[JsonRpcRequestTrait])
                         .map[String]("/" + _.getValue())
                     )
                     .orElseThrow(() =>
