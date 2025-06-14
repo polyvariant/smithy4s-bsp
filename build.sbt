@@ -45,7 +45,7 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-syntax" % "1.58.0",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % "0.0.8+44-ea0af08a-SNAPSHOT",
-      "com.disneystreaming.alloy" % "alloy-core" % "0.3.20",
+      "com.disneystreaming.alloy" % "alloy-core" % "0.3.21",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
       "software.amazon.smithy" % "smithy-diff" % "1.58.0" % Test,
@@ -70,6 +70,7 @@ lazy val codegen = project
       "open-enums",
       "transform-build-target-data",
       "transform-jsonrpclib-traits",
+      "add-http",
       "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
@@ -81,8 +82,8 @@ lazy val bsp4s = project
     commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+44-ea0af08a-SNAPSHOT",
-      "io.circe" %%% "circe-parser" % "0.14.13",
-      "io.circe" %%% "circe-literal" % "0.14.13",
+      "io.circe" %%% "circe-parser" % "0.14.14",
+      "io.circe" %%% "circe-literal" % "0.14.14",
     ),
   )
   .dependsOn(codegen)

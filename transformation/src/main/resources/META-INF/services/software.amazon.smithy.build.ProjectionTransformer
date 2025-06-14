@@ -3,4 +3,5 @@ SetShapes
 OpenEnums
 TransformBuildTargetData
 TransformJsonRpcTraits
+AddHttp
 RenameScalaNamespace
