@@ -81,8 +81,8 @@ lazy val bsp4s = project
     commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+26-13de833b-SNAPSHOT",
-      "io.circe" %%% "circe-parser" % "0.14.13",
-      "io.circe" %%% "circe-literal" % "0.14.13",
+      "io.circe" %%% "circe-parser" % "0.14.14",
+      "io.circe" %%% "circe-literal" % "0.14.14",
     ),
   )
   .dependsOn(codegen)
