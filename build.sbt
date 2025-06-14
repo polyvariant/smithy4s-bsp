@@ -70,6 +70,7 @@ lazy val codegen = project
       "open-enums",
       "transform-build-target-data",
       "transform-jsonrpclib-traits",
+      "add-http",
       "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,

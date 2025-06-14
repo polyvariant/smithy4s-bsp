@@ -30,33 +30,7 @@ object BSPProxy extends IOApp.Simple {
     mkBloopClient
       .flatMap { channel =>
         SimpleRestJsonBuilder
-          .routes(channel)(
-            using service =
-              bsp
-                .BuildServer
-                .toBuilder
-                .mapHints(h => h.add(SimpleRestJson()))
-                .mapEndpointEach(
-                  new PolyFunction5[bsp.BuildServer.Endpoint, bsp.BuildServer.Endpoint] {
-                    def apply[I, E, O, SI, SO](
-                      fa: bsp.BuildServer.Endpoint[I, E, O, SI, SO]
-                    ): bsp.BuildServer.Endpoint[I, E, O, SI, SO] = fa.mapSchema(
-                      _.mapHints(h =>
-                        h.add(
-                          Http(
-                            method = NonEmptyString("POST"),
-                            uri = NonEmptyString("/bsp" + fa.hints.match {
-                              case JsonNotification.hint(not) => show"/notification/${not.value}"
-                              case JsonRequest.hint(req)      => show"/request/${req.value}"
-                            }),
-                          )
-                        )
-                      )
-                    )
-                  }
-                )
-                .build
-          )
+          .routes(channel)(bsp.BuildServer)
           .resource
           .flatMap { routes =>
             EmberServerBuilder.default[IO].withHttpApp(routes.orNotFound).build
