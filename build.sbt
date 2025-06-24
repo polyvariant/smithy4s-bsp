@@ -18,6 +18,8 @@ ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
 
+val jsonrpclibVersion = "0.0.8+51-32e30ec0-SNAPSHOT"
+
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
   scalacOptions ++= {
@@ -44,7 +46,7 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-build" % "1.58.0",
       "software.amazon.smithy" % "smithy-syntax" % "1.58.0",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
-      "tech.neander" % "jsonrpclib-smithy" % "0.0.8+49-7dd4ecdb-SNAPSHOT",
+      "tech.neander" % "jsonrpclib-smithy" % jsonrpclibVersion,
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.21",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
@@ -61,7 +63,7 @@ lazy val codegen = project
     libraryDependencies ++= Seq(
       "ch.epfl.scala" % "spec" % "2.2.0-M2" % Smithy4s,
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2" % Smithy4s,
-      "tech.neander" % "jsonrpclib-smithy" % "0.0.8+49-7dd4ecdb-SNAPSHOT" % Smithy4s,
+      "tech.neander" % "jsonrpclib-smithy" % jsonrpclibVersion % Smithy4s,
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
     Compile / smithy4sModelTransformers := List(
@@ -81,7 +83,7 @@ lazy val bsp4s = project
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-smithy4s" % "0.0.8+49-7dd4ecdb-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-smithy4s" % jsonrpclibVersion,
       "io.circe" %%% "circe-parser" % "0.14.14",
       "io.circe" %%% "circe-literal" % "0.14.14",
     ),
@@ -93,9 +95,8 @@ lazy val examples = project
     fork := true,
     commonSettings,
     libraryDependencies ++= Seq(
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+49-7dd4ecdb-SNAPSHOT",
+      "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
       "co.fs2" %%% "fs2-io" % "3.12.0",
-      "tech.neander" %%% "jsonrpclib-fs2" % "0.0.8+49-7dd4ecdb-SNAPSHOT",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "org.typelevel" %%% "weaver-cats" % "0.9.0" % Test,
     ),
