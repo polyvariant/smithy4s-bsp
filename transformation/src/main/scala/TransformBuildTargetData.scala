@@ -40,6 +40,7 @@ import software.amazon.smithy.model.shapes.AbstractShapeBuilder
 import smithy4s.meta.AdtTrait
 import software.amazon.smithy.model.traits.InputTrait
 import software.amazon.smithy.model.loader.Prelude
+import jsonrpclib.JsonRpcPayloadTrait
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -330,12 +331,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         "data",
         wraps,
         _.addTrait(new RequiredTrait())
-          .addTrait(
-            new DynamicTrait(
-              ShapeId.from("smithy4sbsp.meta#rpcPayload"),
-              Node.objectNode(),
-            )
-          ),
+          .addTrait(JsonRpcPayloadTrait.builder().build()),
       )
     )
     .tap(_.addTrait(new InputTrait()))

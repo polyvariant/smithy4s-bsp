@@ -3,8 +3,8 @@ $version: "2.0"
 namespace sample
 
 use alloy#discriminated
+use jsonrpclib#jsonRpcPayload
 use smithy4s.meta#adt
-use smithy4sbsp.meta#rpcPayload
 use traits#jsonRequest
 
 @mixin
@@ -31,7 +31,7 @@ union Meal {
 operation MakeMeal {
     input := {
         @required
-        @rpcPayload
+        @jsonRpcPayload
         data: Meal
     }
 }
