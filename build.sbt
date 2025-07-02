@@ -65,8 +65,6 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-diff" % "1.60.3" % Test,
     ),
     publish / skip := true,
-    mimaPreviousArtifacts := Set.empty,
-    mimaFailOnNoPrevious := false,
   )
   .dependsOn(protocol)
 
@@ -115,8 +113,6 @@ lazy val examples = project
       "org.typelevel" %%% "weaver-cats" % "0.9.1" % Test,
     ),
     name := "sample-server",
-    mimaPreviousArtifacts := Set.empty,
-    mimaFailOnNoPrevious := false,
   )
   .dependsOn(bsp4s)
 
