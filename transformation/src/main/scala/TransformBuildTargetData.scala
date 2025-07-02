@@ -20,7 +20,6 @@ import software.amazon.smithy.build.ProjectionTransformer
 import software.amazon.smithy.build.TransformContext
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.neighbor.NeighborProvider
-import software.amazon.smithy.model.node.Node
 import software.amazon.smithy.model.shapes.MemberShape
 import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.Shape
@@ -28,7 +27,6 @@ import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.shapes.SmithyIdlModelSerializer
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
-import software.amazon.smithy.model.traits.DynamicTrait
 import software.amazon.smithy.model.traits.JsonNameTrait
 import software.amazon.smithy.model.traits.MixinTrait
 import software.amazon.smithy.model.traits.RequiredTrait
@@ -41,6 +39,7 @@ import smithy4s.meta.AdtTrait
 import software.amazon.smithy.model.traits.InputTrait
 import software.amazon.smithy.model.loader.Prelude
 import jsonrpclib.JsonRpcPayloadTrait
+import smithy4sbsp.meta.DataDefaultTrait
 
 class TransformBuildTargetData extends ProjectionTransformer {
   def getName(): String = "transform-build-target-data"
@@ -158,7 +157,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         otherTarget.getId(),
         _.addTrait(new JsonNameTrait("other"))
           .addTrait(
-            new DynamicTrait(ShapeId.from("smithy4sbsp.meta#dataDefault"), Node.objectNode())
+            DataDefaultTrait.builder().build()
           ),
       )
     }

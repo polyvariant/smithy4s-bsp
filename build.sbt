@@ -37,6 +37,19 @@ val commonSettings = Seq(
   ),
 )
 
+lazy val protocol = project
+  .settings(
+    autoScalaLibrary := false,
+    crossPaths := false,
+    libraryDependencies ++= Seq(
+      "software.amazon.smithy" % "smithy-model" % "1.60.3"
+    ),
+    smithyTraitCodegenNamespace := "smithy4sbsp.meta",
+    smithyTraitCodegenJavaPackage := "smithy4sbsp.meta",
+    smithyTraitCodegenDependencies := Nil,
+  )
+  .enablePlugins(SmithyTraitCodegenPlugin)
+
 lazy val transformation = project
   .settings(
     commonSettings,
@@ -55,6 +68,7 @@ lazy val transformation = project
     mimaPreviousArtifacts := Set.empty,
     mimaFailOnNoPrevious := false,
   )
+  .dependsOn(protocol)
 
 lazy val codegen = project
   .settings(
@@ -74,6 +88,7 @@ lazy val codegen = project
       "add-http",
       "rename-scala-namespace",
     ),
+    Compile / smithy4sAllDependenciesAsJars += (protocol / Compile / packageBin).value,
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
   )
   .enablePlugins(Smithy4sCodegenPlugin)
@@ -107,5 +122,5 @@ lazy val examples = project
 
 lazy val root = project
   .in(file("."))
-  .aggregate(bsp4s, examples, codegen, transformation)
+  .aggregate(bsp4s, examples, codegen, transformation, protocol)
   .enablePlugins(NoPublishPlugin)

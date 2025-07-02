@@ -38,19 +38,23 @@ import smithy4sbsp.meta.DataDefault
 
 import util.chaining.*
 import jsonrpclib.JsonRpcPayload
+import smithy4s.UnsupportedProtocolError
 
 object BSPCodecs {
 
   def clientStub[Alg[_[_, _, _, _, _]], F[_]: Monadic](
     service: Service[Alg],
     chan: Channel[F],
-  ): service.Impl[F] = ClientStub(bspServiceTransformations(service), chan)
+  ): Either[UnsupportedProtocolError, service.Impl[F]] = ClientStub(
+    bspServiceTransformations(service),
+    chan,
+  )
 
   def serverEndpoints[Alg[_[_, _, _, _, _]], F[_]: Monadic](
     impl: FunctorAlgebra[Alg, F]
   )(
     using service: Service[Alg]
-  ): List[jsonrpclib.Endpoint[F]] =
+  ): Either[UnsupportedProtocolError, List[jsonrpclib.Endpoint[F]]] =
     ServerEndpoints[Alg, F](impl)(
       using bspServiceTransformations(service)
     )
