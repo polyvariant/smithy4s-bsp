@@ -13,7 +13,6 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
 ThisBuild / scalaVersion := "3.3.6"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
-ThisBuild / tlCiDependencyGraphJob := false
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
