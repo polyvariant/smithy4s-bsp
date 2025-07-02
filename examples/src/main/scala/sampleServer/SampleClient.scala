@@ -127,12 +127,12 @@ object SampleClient extends IOApp.Simple {
       socket <- connectTo(socketFile)
       chan <- FS2Channel.resource[IO]()
       bloop = Bloop(
-        BSPCodecs.clientStub(BuildServer, chan),
-        BSPCodecs.clientStub(ScalaBuildServer, chan),
+        BSPCodecs.clientStub(BuildServer, chan).toTry.get,
+        BSPCodecs.clientStub(ScalaBuildServer, chan).toTry.get,
       )
 
       handler = bspClientHandler()
-      _ <- chan.withEndpoints(BSPCodecs.serverEndpoints(handler))
+      _ <- chan.withEndpoints(BSPCodecs.serverEndpoints(handler).toTry.get)
       _ <- bindStreams(socket, chan)
     } yield bloop
 
