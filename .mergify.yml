@@ -39,6 +39,14 @@ pull_request_rules:
       add:
       - examples
       remove: []
+- name: Label protocol PRs
+  conditions:
+  - files~=^protocol/
+  actions:
+    label:
+      add:
+      - protocol
+      remove: []
 - name: Label transformation PRs
   conditions:
   - files~=^transformation/
