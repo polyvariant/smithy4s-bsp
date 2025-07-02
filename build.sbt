@@ -49,6 +49,7 @@ lazy val protocol = project
     smithyTraitCodegenDependencies := Nil,
   )
   .enablePlugins(SmithyTraitCodegenPlugin)
+  .enablePlugins(NoPublishPlugin)
 
 lazy val transformation = project
   .settings(
@@ -65,10 +66,9 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-diff" % "1.60.3" % Test,
     ),
     publish / skip := true,
-    mimaPreviousArtifacts := Set.empty,
-    mimaFailOnNoPrevious := false,
   )
   .dependsOn(protocol)
+  .enablePlugins(NoPublishPlugin)
 
 lazy val codegen = project
   .settings(
@@ -115,10 +115,9 @@ lazy val examples = project
       "org.typelevel" %%% "weaver-cats" % "0.9.1" % Test,
     ),
     name := "sample-server",
-    mimaPreviousArtifacts := Set.empty,
-    mimaFailOnNoPrevious := false,
   )
   .dependsOn(bsp4s)
+  .enablePlugins(NoPublishPlugin)
 
 lazy val root = project
   .in(file("."))
