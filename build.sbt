@@ -47,6 +47,11 @@ lazy val protocol = project
     smithyTraitCodegenNamespace := "smithy4sbsp.meta",
     smithyTraitCodegenJavaPackage := "smithy4sbsp.meta",
     smithyTraitCodegenDependencies := Nil,
+    javacOptions -= "-Xlint:all",
+    Compile / doc / javacOptions ++= Seq(
+      // skip "no comment" warnings in Javadoc, these Java files are just boilerplate
+      "-Xdoclint:all,-missing"
+    ),
   )
   .enablePlugins(SmithyTraitCodegenPlugin)
   .enablePlugins(NoPublishPlugin)
