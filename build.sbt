@@ -13,7 +13,6 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
 ThisBuild / scalaVersion := "3.3.6"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
-ThisBuild / tlCiDependencyGraphJob := false
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
@@ -34,7 +33,7 @@ val commonSettings = Seq(
       Nil
   },
   libraryDependencies ++= Seq(
-    "org.typelevel" %%% "weaver-cats" % "0.9.0" % Test
+    "org.typelevel" %%% "weaver-cats" % "0.9.1" % Test
   ),
 )
 
@@ -43,14 +42,14 @@ lazy val transformation = project
     commonSettings,
     scalaVersion := "2.12.20",
     libraryDependencies ++= Seq(
-      "software.amazon.smithy" % "smithy-build" % "1.58.0",
-      "software.amazon.smithy" % "smithy-syntax" % "1.58.0",
+      "software.amazon.smithy" % "smithy-build" % "1.60.3",
+      "software.amazon.smithy" % "smithy-syntax" % "1.60.3",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % jsonrpclibVersion,
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.21",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
-      "software.amazon.smithy" % "smithy-diff" % "1.58.0" % Test,
+      "software.amazon.smithy" % "smithy-diff" % "1.60.3" % Test,
     ),
     publish / skip := true,
     mimaPreviousArtifacts := Set.empty,
@@ -98,7 +97,7 @@ lazy val examples = project
       "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
-      "org.typelevel" %%% "weaver-cats" % "0.9.0" % Test,
+      "org.typelevel" %%% "weaver-cats" % "0.9.1" % Test,
     ),
     name := "sample-server",
     mimaPreviousArtifacts := Set.empty,
