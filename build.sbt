@@ -44,7 +44,7 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-syntax" % "1.60.3",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % "0.0.8+26-13de833b-SNAPSHOT",
-      "com.disneystreaming.alloy" % "alloy-core" % "0.3.27",
+      "com.disneystreaming.alloy" % "alloy-core" % "0.3.28",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
       "software.amazon.smithy" % "smithy-diff" % "1.60.3" % Test,
