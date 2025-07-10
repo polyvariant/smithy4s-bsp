@@ -17,7 +17,7 @@ ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
 
-val jsonrpclibVersion = "0.0.8+51-32e30ec0-SNAPSHOT"
+val jsonrpclibVersion = "0.1.0"
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
@@ -33,7 +33,7 @@ val commonSettings = Seq(
       Nil
   },
   libraryDependencies ++= Seq(
-    "org.typelevel" %%% "weaver-cats" % "0.9.1" % Test
+    "org.typelevel" %%% "weaver-cats" % "0.9.2" % Test
   ),
 )
 
@@ -65,7 +65,7 @@ lazy val transformation = project
       "software.amazon.smithy" % "smithy-syntax" % "1.60.3",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % jsonrpclibVersion,
-      "com.disneystreaming.alloy" % "alloy-core" % "0.3.21",
+      "com.disneystreaming.alloy" % "alloy-core" % "0.3.28",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.4" % Test,
       "software.amazon.smithy" % "smithy-diff" % "1.60.3" % Test,
@@ -117,7 +117,7 @@ lazy val examples = project
       "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
-      "org.typelevel" %%% "weaver-cats" % "0.9.1" % Test,
+      "org.typelevel" %%% "weaver-cats" % "0.9.2" % Test,
     ),
     name := "sample-server",
   )
