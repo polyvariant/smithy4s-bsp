@@ -27,6 +27,7 @@ import software.amazon.smithy.model.traits.ErrorTrait
 import software.amazon.smithy.model.traits.MixinTrait
 
 import scala.collection.JavaConverters.*
+import scala.annotation.nowarn
 
 class MakeBincompatFriendly extends ProjectionTransformer {
   def getName(): String = "make-bincompat-friendly"
@@ -64,9 +65,8 @@ class MakeBincompatFriendly extends ProjectionTransformer {
             !s.hasTrait(classOf[MixinTrait]) &&
             !illegalShapes(s.getId()) =>
 
-        val b: AbstractShapeBuilder[? <: AbstractShapeBuilder[_, _], Shape] = Shape.shapeToBuilder(
-          s
-        )
+        val b: AbstractShapeBuilder[? <: AbstractShapeBuilder[_, _], Shape] =
+          Shape.shapeToBuilder(s): @nowarn("msg=dead code")
 
         b.addTrait(BincompatFriendlyTrait.builder().build())
         b.build()
