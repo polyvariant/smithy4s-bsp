@@ -65,9 +65,10 @@ class MakeBincompatFriendly extends ProjectionTransformer {
             !s.hasTrait(classOf[MixinTrait]) &&
             !illegalShapes(s.getId()) =>
 
-        val b: AbstractShapeBuilder[? <: AbstractShapeBuilder[_, _], Shape] =
-          Shape.shapeToBuilder(s): @nowarn("msg=dead code")
-
+        @nowarn("msg=dead code")
+        val b: AbstractShapeBuilder[? <: AbstractShapeBuilder[_, _], Shape] = Shape.shapeToBuilder(
+          s
+        )
         b.addTrait(BincompatFriendlyTrait.builder().build())
         b.build()
     }
