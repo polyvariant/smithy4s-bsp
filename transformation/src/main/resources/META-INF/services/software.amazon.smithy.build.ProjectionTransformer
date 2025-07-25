@@ -5,3 +5,4 @@ TransformBuildTargetData
 TransformJsonRpcTraits
 AddHttp
 RenameScalaNamespace
+MakeBincompatFriendly

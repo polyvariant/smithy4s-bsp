@@ -1,4 +1,4 @@
-ThisBuild / tlBaseVersion := "0.5"
+ThisBuild / tlBaseVersion := "0.6"
 ThisBuild / organization := "org.polyvariant.smithy4s-bsp"
 ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
@@ -91,6 +91,7 @@ lazy val codegen = project
       "transform-build-target-data",
       "transform-jsonrpclib-traits",
       "add-http",
+      "make-bincompat-friendly",
       "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (protocol / Compile / packageBin).value,
