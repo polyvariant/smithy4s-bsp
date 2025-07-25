@@ -91,6 +91,7 @@ lazy val codegen = project
       "transform-build-target-data",
       "transform-jsonrpclib-traits",
       "add-http",
+      "make-bincompat-friendly",
       "rename-scala-namespace",
     ),
     Compile / smithy4sAllDependenciesAsJars += (protocol / Compile / packageBin).value,
