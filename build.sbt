@@ -33,7 +33,7 @@ val commonSettings = Seq(
       Nil
   },
   libraryDependencies ++= Seq(
-    "org.typelevel" %%% "weaver-cats" % "0.10.0" % Test
+    "org.typelevel" %%% "weaver-cats" % "0.10.1" % Test
   ),
 )
 
@@ -118,7 +118,7 @@ lazy val examples = project
       "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
       "co.fs2" %%% "fs2-io" % "3.12.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
-      "org.typelevel" %%% "weaver-cats" % "0.10.0" % Test,
+      "org.typelevel" %%% "weaver-cats" % "0.10.1" % Test,
     ),
     name := "sample-server",
   )
