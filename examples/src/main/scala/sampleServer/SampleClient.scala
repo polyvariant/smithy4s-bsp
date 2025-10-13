@@ -83,7 +83,7 @@ object SampleClient extends IOApp.Simple {
           .compile
           .drain
           .background
-        // wait for the started message before proceeding
+          // wait for the started message before proceeding
           <* started.get.toResource
       }
     }
