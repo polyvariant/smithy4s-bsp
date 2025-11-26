@@ -59,7 +59,7 @@ lazy val protocol = project
 lazy val transformation = project
   .settings(
     commonSettings,
-    scalaVersion := "2.12.20",
+    scalaVersion := "2.13.18",
     libraryDependencies ++= Seq(
       "software.amazon.smithy" % "smithy-build" % "1.64.0",
       "software.amazon.smithy" % "smithy-syntax" % "1.64.0",
