@@ -1,21 +1,16 @@
 package bsp4s.proxy
 
-import alloy.SimpleRestJson
 import bsp.BuildClient
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.kernel.Resource
-import cats.syntax.all.*
 import fs2.io.file.Files
 import fs2.io.net.unixsocket.UnixSocketAddress
 import fs2.io.net.unixsocket.UnixSockets
 import fs2.io.process.Processes
 import jsonrpclib.fs2.*
 import org.http4s.ember.server.EmberServerBuilder
-import smithy.api.Http
-import smithy.api.NonEmptyString
 import smithy4s.http4s.SimpleRestJsonBuilder
-import smithy4s.kinds.PolyFunction5
 import smithy4sbsp.bsp4s.BSPCodecs
 
 import concurrent.duration.*
