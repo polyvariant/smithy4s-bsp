@@ -47,6 +47,14 @@ pull_request_rules:
       add:
       - protocol
       remove: []
+- name: Label proxy PRs
+  conditions:
+  - files~=^proxy/
+  actions:
+    label:
+      add:
+      - proxy
+      remove: []
 - name: Label transformation PRs
   conditions:
   - files~=^transformation/

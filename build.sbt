@@ -13,7 +13,7 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
 ThisBuild / scalaVersion := "3.3.7"
 ThisBuild / tlJdkRelease := Some(21)
 ThisBuild / tlFatalWarnings := false
-ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
+ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
 
@@ -125,7 +125,22 @@ lazy val examples = project
   .dependsOn(bsp4s)
   .enablePlugins(NoPublishPlugin)
 
+// early-stage HTTP proxy for testing bsp servers without messing with jsonrpc
+lazy val proxy = project
+  .settings(
+    fork := true,
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
+      "co.fs2" %%% "fs2-io" % "3.12.2",
+      "org.http4s" %%% "http4s-ember-server" % "0.23.30",
+      "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
+    ),
+  )
+  .dependsOn(bsp4s)
+  .enablePlugins(NoPublishPlugin)
+
 lazy val root = project
   .in(file("."))
-  .aggregate(bsp4s, examples, codegen, transformation, protocol)
+  .aggregate(bsp4s, examples, codegen, transformation, protocol, proxy)
   .enablePlugins(NoPublishPlugin)
