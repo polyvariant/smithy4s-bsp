@@ -10,8 +10,6 @@ import fs2.io.file.Files
 import fs2.io.net.unixsocket.UnixSocketAddress
 import fs2.io.net.unixsocket.UnixSockets
 import fs2.io.process.Processes
-import jsonrpclib.JsonNotification
-import jsonrpclib.JsonRequest
 import jsonrpclib.fs2.*
 import org.http4s.ember.server.EmberServerBuilder
 import smithy.api.Http
@@ -54,10 +52,10 @@ object BSPProxy extends IOApp.Simple {
               (temp / "bloop.sock").toNioPath.toString,
             )
         )
-        .evalTap(p =>
+        .evalTap { _ =>
           IO.consoleForIO.errorln("socket: " + (temp / "bloop.sock")) *> IO.sleep(1.second)
-        )
-        .flatMap { proc =>
+        }
+        .flatMap { _ =>
           UnixSockets
             .forAsync[IO]
             .client(UnixSocketAddress((temp / "bloop.sock").toNioPath))
@@ -86,22 +84,26 @@ object BSPProxy extends IOApp.Simple {
                   .drain
                   .background
                   .flatMap { _ =>
-                    val extraEndpoints = BSPCodecs.serverEndpoints(
-                      bsp
-                        .BuildClient
-                        .impl(new bsp.BuildClient.FunctorEndpointCompiler[IO] {
-                          def apply[A0, A1, A2, A3, A4](
-                            fa: BuildClient.Endpoint[A0, A1, A2, A3, A4]
-                          ): A0 => IO[A2] =
-                            in =>
-                              IO {
-                                System
-                                  .err
-                                  .println(s"${fa.name}: received: " + in)
-                                  .asInstanceOf[A2]
-                              }
-                        })
-                    )
+                    val extraEndpoints =
+                      BSPCodecs
+                        .serverEndpoints(
+                          bsp
+                            .BuildClient
+                            .impl(new bsp.BuildClient.FunctorEndpointCompiler[IO] {
+                              def apply[A0, A1, A2, A3, A4](
+                                fa: BuildClient.Endpoint[A0, A1, A2, A3, A4]
+                              ): A0 => IO[A2] =
+                                in =>
+                                  IO {
+                                    System
+                                      .err
+                                      .println(s"${fa.name}: received: " + in)
+                                      .asInstanceOf[A2]
+                                  }
+                            })
+                        )
+                        .toTry
+                        .get
 
                     chan.withEndpoints(extraEndpoints).map(_ => chan)
                   }
@@ -110,7 +112,7 @@ object BSPProxy extends IOApp.Simple {
             }
         }
         .map { channel =>
-          BSPCodecs.clientStub(bsp.BuildServer, channel)
+          BSPCodecs.clientStub(bsp.BuildServer, channel).toTry.get
         }
     }
 
