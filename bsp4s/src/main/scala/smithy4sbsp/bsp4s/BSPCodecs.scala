@@ -31,7 +31,6 @@ import smithy4s.ShapeTag
 import smithy4s.kinds.FunctorAlgebra
 import smithy4s.schema.OperationSchema
 import smithy4s.schema.Schema
-import smithy4s.schema.Schema.StructSchema
 import smithy4s.schema.Schema.UnionSchema
 import smithy4s.~>
 import smithy4sbsp.meta.DataDefault
@@ -39,6 +38,7 @@ import smithy4sbsp.meta.DataDefault
 import util.chaining.*
 import jsonrpclib.JsonRpcPayload
 import smithy4s.UnsupportedProtocolError
+import smithy4s.schema.SchemaPartition
 
 object BSPCodecs {
 
@@ -74,19 +74,12 @@ object BSPCodecs {
   // todo: reconcile this with the one from jsonrpclib.
   // we can't atm, because this one has to run before addDataDefault. Otherwise, if we run addDataDefault,
   // the struct schema is gone (it gets turned into a Document Decoder wrapped in a refinement).
-  private val flattenRpcPayload: Schema ~> Schema =
+  private val payloadTransformation: Schema ~> Schema =
     new (Schema ~> Schema) {
-      def apply[A0](fa: Schema[A0]): Schema[A0] =
-        fa match {
-          case struct: StructSchema[b] =>
-            struct
-              .fields
-              .collectFirst {
-                case field if field.hints.has[JsonRpcPayload] =>
-                  field.schema.biject[b](f => struct.make(Vector(f)))(field.get)
-              }
-              .getOrElse(fa)
-          case _ => fa
+      def apply[A](schema: Schema[A]): Schema[A] =
+        schema.findPayload(_.hints.has[JsonRpcPayload]) match {
+          case SchemaPartition.TotalMatch(payloadSchema) => payloadSchema
+          case _                                         => schema
         }
     }
 
@@ -140,8 +133,8 @@ object BSPCodecs {
               Document.Encoder.fromSchema(fa).encode(b) match {
                 case DObject(value) if value(discriminatorTag.value) == discriminatorValue =>
                   value - discriminatorTag.value
-                case other @ DObject(keys) => keys
-                case other                 => sys.error("Expected DObject but got: " + other)
+                case DObject(keys) => keys
+                case other         => sys.error("Expected DObject but got: " + other)
               }
 
             val decodeRefin =
@@ -171,7 +164,7 @@ object BSPCodecs {
     }
 
   private[bsp4s] val bspTransformations: Schema ~> Schema = Schema
-    .transformTransitivelyK(flattenRpcPayload)
+    .transformTransitivelyK(payloadTransformation)
     .andThen(Schema.transformTransitivelyK(addDataDefault))
 
 }
