@@ -116,7 +116,7 @@ lazy val examples = project
     commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
-      "co.fs2" %%% "fs2-io" % "3.12.2",
+      "co.fs2" %%% "fs2-io" % "3.13.0",
       "com.disneystreaming.smithy4s" %%% "smithy4s-json" % smithy4sVersion.value,
       "org.typelevel" %%% "weaver-cats" % "0.11.3" % Test,
     ),
@@ -132,7 +132,7 @@ lazy val proxy = project
     commonSettings,
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
-      "co.fs2" %%% "fs2-io" % "3.12.2",
+      "co.fs2" %%% "fs2-io" % "3.13.0",
       "org.http4s" %%% "http4s-ember-server" % "0.23.33",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
