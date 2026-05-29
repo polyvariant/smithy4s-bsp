@@ -68,7 +68,7 @@ lazy val transformation = project
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.39",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.8" % Test,
-      "software.amazon.smithy" % "smithy-diff" % "1.70.0" % Test,
+      "software.amazon.smithy" % "smithy-diff" % "1.71.0" % Test,
     ),
     publish / skip := true,
   )
