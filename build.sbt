@@ -33,10 +33,14 @@ GlobalScope / tlCommandAliases := {
 val jsonrpclibVersion = "0.2.0"
 
 val commonSettings = Seq(
-  scalacOptions ++=
-    Seq(
-      "-Wnonunit-statement"
-    ),
+  scalacOptions ++= {
+    if (scalaVersion.value.startsWith("3"))
+      Seq(
+        "-Wnonunit-statement"
+      )
+    else
+      Nil
+  },
   libraryDependencies ++= Seq(
     "org.typelevel" %%% "weaver-cats" % "0.12.0" % Test
   ),
