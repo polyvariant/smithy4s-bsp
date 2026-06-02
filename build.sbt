@@ -30,7 +30,7 @@ GlobalScope / tlCommandAliases := {
   aliases.updated("prePR", aliases.getOrElse("prePR", Nil) :+ "smithyFmtAll")
 }
 
-val jsonrpclibVersion = "0.1.1+4-449308c5-SNAPSHOT"
+val jsonrpclibVersion = "0.2.0"
 
 val commonSettings = Seq(
   scalacOptions ++=
