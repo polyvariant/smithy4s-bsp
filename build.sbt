@@ -1,4 +1,4 @@
-ThisBuild / tlBaseVersion := "0.6"
+ThisBuild / tlBaseVersion := "0.7"
 ThisBuild / organization := "org.polyvariant.smithy4s-bsp"
 ThisBuild / organizationName := "Polyvariant"
 ThisBuild / startYear := Some(2025)
@@ -17,17 +17,26 @@ ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
 
-val jsonrpclibVersion = "0.1.2"
+ThisBuild / githubWorkflowBuild ~= {
+  _.map {
+    case step: WorkflowStep.Sbt if step.name == Some("Check headers and formatting") =>
+      step.withCommands(step.commands :+ "smithyFmtCheckAll")
+    case other => other
+  }
+}
+
+GlobalScope / tlCommandAliases := {
+  val aliases = (GlobalScope / tlCommandAliases).value
+  aliases.updated("prePR", aliases.getOrElse("prePR", Nil) :+ "smithyFmtAll")
+}
+
+val jsonrpclibVersion = "0.2.0"
 
 val commonSettings = Seq(
-  scalacOptions -= "-Ykind-projector:underscores",
   scalacOptions ++= {
     if (scalaVersion.value.startsWith("3"))
       Seq(
-        "-Ykind-projector",
-        "-deprecation",
-        "-Wunused:all",
-        "-Wnonunit-statement",
+        "-Wnonunit-statement"
       )
     else
       Nil
@@ -92,7 +101,7 @@ lazy val codegen = project
       "transform-jsonrpclib-traits",
       "add-http",
       "make-bincompat-friendly",
-      "rename-scala-namespace",
+      "serialize",
     ),
     Compile / smithy4sAllDependenciesAsJars += (protocol / Compile / packageBin).value,
     Compile / smithy4sAllDependenciesAsJars += (transformation / Compile / packageBin).value,
