@@ -118,7 +118,7 @@ class TransformBuildTargetData extends ProjectionTransformer {
         new DiscriminatedUnionTrait("dataKind")
       )
       .addTrait(
-        new AdtTrait()
+        AdtTrait.builder().build()
       )
 
     targetRefs.toList.sorted.foreach { targetRef =>

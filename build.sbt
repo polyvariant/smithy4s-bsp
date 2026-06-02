@@ -17,7 +17,7 @@ ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
 
 ThisBuild / mergifyStewardConfig ~= (_.map(_.withMergeMinors(true)))
 
-val jsonrpclibVersion = "0.1.2"
+val jsonrpclibVersion = "0.1.1+4-449308c5-SNAPSHOT"
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
