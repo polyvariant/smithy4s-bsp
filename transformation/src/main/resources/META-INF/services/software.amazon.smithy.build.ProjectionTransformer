@@ -4,5 +4,6 @@ OpenEnums
 TransformBuildTargetData
 TransformJsonRpcTraits
 AddHttp
-RenameScalaNamespace
+Serialize
 MakeBincompatFriendly
+

@@ -41,14 +41,14 @@ import cats.syntax.all.*
 import fs2.Pipe
 import fs2.io.file.Files
 import fs2.io.file.Path
+import fs2.io.net.Network
 import fs2.io.net.Socket
-import fs2.io.net.unixsocket.UnixSocketAddress
-import fs2.io.net.unixsocket.UnixSockets
 import fs2.io.process.Process
 import fs2.io.process.ProcessBuilder
 import fs2.io.process.Processes
 import jsonrpclib.fs2.*
 import smithy4sbsp.bsp4s.BSPCodecs
+import com.comcast.ip4s.UnixSocketAddress
 
 object SampleClient extends IOApp.Simple {
   case class Bloop(bs: BuildServer[IO], scala: ScalaBuildServer[IO])
@@ -88,9 +88,8 @@ object SampleClient extends IOApp.Simple {
       }
     }
 
-  def connectTo(socketFile: Path): Resource[IO, Socket[IO]] = UnixSockets
-    .forAsync[IO]
-    .client(UnixSocketAddress(socketFile.toNioPath))
+  def connectTo(socketFile: Path): Resource[IO, Socket[IO]] = Network[IO]
+    .connect(UnixSocketAddress(socketFile.toString))
 
   def bindStreams(socket: Socket[IO], chan: FS2Channel[IO]) = {
     val receive = socket

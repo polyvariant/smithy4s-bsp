@@ -21,8 +21,7 @@ import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.kernel.Resource
 import fs2.io.file.Files
-import fs2.io.net.unixsocket.UnixSocketAddress
-import fs2.io.net.unixsocket.UnixSockets
+import fs2.io.net.Network
 import fs2.io.process.Processes
 import jsonrpclib.fs2.*
 import org.http4s.ember.server.EmberServerBuilder
@@ -30,6 +29,7 @@ import smithy4s.http4s.SimpleRestJsonBuilder
 import smithy4sbsp.bsp4s.BSPCodecs
 
 import concurrent.duration.*
+import com.comcast.ip4s.UnixSocketAddress
 
 // HTTP proxy over bsp
 // currently hardcoded to bloop
@@ -67,9 +67,8 @@ object BSPProxy extends IOApp.Simple {
           IO.consoleForIO.errorln("socket: " + (temp / "bloop.sock")) *> IO.sleep(1.second)
         }
         .flatMap { _ =>
-          UnixSockets
-            .forAsync[IO]
-            .client(UnixSocketAddress((temp / "bloop.sock").toNioPath))
+          Network[IO]
+            .connect(UnixSocketAddress((temp / "bloop.sock").toString))
             .flatMap { socket =>
               jsonrpclib.fs2.FS2Channel.resource[IO]().flatMap { chan =>
                 // we use the sock

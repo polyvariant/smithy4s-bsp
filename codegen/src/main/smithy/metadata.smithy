@@ -10,6 +10,10 @@ metadata validators = [
     }
 ]
 
+metadata smithy4sCodegen = {
+    packageMappings: { "bsp.scala": "bsp.scala_", "bsp.java": "bsp.java_", traits: "bsp.traits" }
+}
+
 namespace metadataAdditions
 
 use bsp#BuildClient

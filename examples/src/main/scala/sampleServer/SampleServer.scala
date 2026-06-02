@@ -60,7 +60,6 @@ import jsonrpclib.fs2.CancelTemplate
 import jsonrpclib.fs2.FS2Channel
 import jsonrpclib.fs2.catsMonadic
 import jsonrpclib.fs2.lsp
-import smithy4s.kinds.stubs.Kind1
 import smithy4sbsp.bsp4s.BSPCodecs
 
 import java.nio.file.Paths
