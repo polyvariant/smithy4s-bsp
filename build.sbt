@@ -142,7 +142,7 @@ lazy val proxy = project
     libraryDependencies ++= Seq(
       "tech.neander" %%% "jsonrpclib-fs2" % jsonrpclibVersion,
       "co.fs2" %%% "fs2-io" % "3.13.0",
-      "org.http4s" %%% "http4s-ember-server" % "0.23.34",
+      "org.http4s" %%% "http4s-ember-server" % "0.23.35",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
   )
