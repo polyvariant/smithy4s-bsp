@@ -51,7 +51,7 @@ lazy val protocol = project
     autoScalaLibrary := false,
     crossPaths := false,
     libraryDependencies ++= Seq(
-      "software.amazon.smithy" % "smithy-model" % "1.73.0"
+      "software.amazon.smithy" % "smithy-model" % "1.74.0"
     ),
     smithyTraitCodegenNamespace := "smithy4sbsp.meta",
     smithyTraitCodegenJavaPackage := "smithy4sbsp.meta",
@@ -70,14 +70,14 @@ lazy val transformation = project
     commonSettings,
     scalaVersion := "2.12.21",
     libraryDependencies ++= Seq(
-      "software.amazon.smithy" % "smithy-build" % "1.73.0",
-      "software.amazon.smithy" % "smithy-syntax" % "1.73.0",
+      "software.amazon.smithy" % "smithy-build" % "1.74.0",
+      "software.amazon.smithy" % "smithy-syntax" % "1.74.0",
       "ch.epfl.scala" % "spec-traits" % "2.2.0-M2",
       "tech.neander" % "jsonrpclib-smithy" % jsonrpclibVersion,
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.40",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
       "com.lihaoyi" %% "os-lib" % "0.11.8" % Test,
-      "software.amazon.smithy" % "smithy-diff" % "1.73.0" % Test,
+      "software.amazon.smithy" % "smithy-diff" % "1.74.0" % Test,
     ),
     publish / skip := true,
   )
