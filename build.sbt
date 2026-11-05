@@ -76,7 +76,7 @@ lazy val transformation = project
       "tech.neander" % "jsonrpclib-smithy" % jsonrpclibVersion,
       "com.disneystreaming.alloy" % "alloy-core" % "0.3.40",
       "com.disneystreaming.smithy4s" % "smithy4s-protocol" % smithy4sVersion.value,
-      "com.lihaoyi" %% "os-lib" % "0.11.9" % Test,
+      "com.lihaoyi" %% "os-lib" % "0.11.10" % Test,
       "software.amazon.smithy" % "smithy-diff" % "1.74.1" % Test,
     ),
     publish / skip := true,
